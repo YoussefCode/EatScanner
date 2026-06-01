@@ -1,0 +1,195 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj -configuration Debug -scheme EatScanner -destination id=568AB59A-06D5-418A-A28B-8F2DC705658F
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'EatScanner' in project 'EatScanner' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner/Images.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 427302fac6db5a585ed7493430caa4f7
+Build description path: /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/XCBuildData/427302fac6db5a585ed7493430caa4f7.xcbuilddata
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.4.sdk -o /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.4-23E252-686eebb5dc1d8ecb277353a59184f4aa.sdkstatcache
+
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner-686473194518a7741ecbbc0bb64975ce-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner-686473194518a7741ecbbc0bb64975ce-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner.xcodeproj
+    builtin-create-build-directory /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-00DD1BFF1BD5951E006B06BC.sh (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-00DD1BFF1BD5951E006B06BC.sh
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-08A4A3CD28434E44B6B9DE2E.sh (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-08A4A3CD28434E44B6B9DE2E.sh
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-800E24972A6A228C8D4807E9.sh (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-800E24972A6A228C8D4807E9.sh
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.SwiftConstValuesFileList (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner_const_extract_protocols.json (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.SwiftFileList (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.SwiftFileList
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.LinkFileList (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner.LinkFileList
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner-OutputFileMap.json (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/EatScanner-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/7187679823f38a2a940e0043cdf9d637-common-args.resp (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Objects-normal/arm64/7187679823f38a2a940e0043cdf9d637-common-args.resp
+'-std=gnu99' -fmodules -gmodules '-fmodules-cache-path=/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/ModuleCache.noindex' -fpascal-strings -O0 -fno-common '-DDEBUG=1' '-DFB_SONARKIT_ENABLED=1' -g -iquote /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-generated-files.hmap -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-own-target-headers.hmap -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-all-target-headers.hmap -iquote /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-project-headers.hmap -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator/include -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources-normal/arm64 -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources/arm64 -I/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources -F/Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.DependencyStaticMetadataFileList (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.DependencyMetadataFileList (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-project-headers.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-project-headers.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-own-target-headers.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-generated-files.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-generated-files.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-all-target-headers.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-all-non-framework-target-headers.hmap (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-DebugDylibPath-normal-arm64.txt (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-DebugDylibInstallName-normal-arm64.txt (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources/Entitlements-Simulated.plist (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources/Entitlements-Simulated.plist
+
+WriteAuxiliaryFile /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources/EatScanner_vers.c (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    write-file /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/DerivedSources/EatScanner_vers.c
+
+MkDir /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator/EatScanner.app (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    /bin/mkdir -p /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Products/Debug-iphonesimulator/EatScanner.app
+
+ProcessProductPackaging /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner/EatScanner.entitlements /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    
+    Entitlements:
+    
+    {
+}
+    
+    builtin-productPackagingUtility /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner/EatScanner.entitlements -entitlements -format xml -o /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent
+
+ProcessProductPackaging /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner/EatScanner.entitlements /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "FAKETEAMID.com.eatscanner.reactnative";
+}
+    
+    builtin-productPackagingUtility /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios/EatScanner/EatScanner.entitlements -entitlements -format xml -o /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent
+
+ProcessProductPackagingDER /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent.der (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    /usr/bin/derq query -f xml -i /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent -o /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app.xcent.der --raw
+
+ProcessProductPackagingDER /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent.der (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    /usr/bin/derq query -f xml -i /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent -o /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/EatScanner.app-Simulated.xcent.der --raw
+
+PhaseScriptExecution [CP]\ Check\ Pods\ Manifest.lock /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-08A4A3CD28434E44B6B9DE2E.sh (in target 'EatScanner' from project 'EatScanner')
+    cd /Users/youssefelmourabit/EatScanner/EatScannerReactNative/ios
+    /bin/sh -c /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-08A4A3CD28434E44B6B9DE2E.sh
+diff: /Podfile.lock: No such file or directory
+error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.
+
+note: Run script build phase 'Bundle React Native code and images' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'EatScanner' from project 'EatScanner')
