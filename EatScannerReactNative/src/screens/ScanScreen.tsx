@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Easing, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg: "#F7F6F5",
+  bg: "#FFF8EF",
   surface: "#FFFFFF",
-  surfaceRaised: "#FAFAF9",
-  border: "rgba(0,0,0,0.07)",
-  borderFocus: "rgba(0,0,0,0.18)",
-  text: "#0C0B0A",
-  textMuted: "#8A8480",
-  textSubtle: "#B5B0AC",
-  emerald: "#10B981",
-  emeraldSoft: "rgba(16,185,129,0.10)",
+  surfaceRaised: "#FFF4E6",
+  border: "rgba(138,114,91,0.20)",
+  borderFocus: "rgba(255,122,89,0.30)",
+  text: "#35282A",
+  textMuted: "#7E6D6C",
+  textSubtle: "#B59E9A",
+  emerald: "#22C55E",
+  emeraldSoft: "rgba(34,197,94,0.12)",
   amber: "#F59E0B",
   amberSoft: "rgba(245,158,11,0.10)",
   danger: "#EF4444",
@@ -35,6 +35,7 @@ function parseIngredientTokens(value: string): string[] {
 type Props = {
   barcode: string;
   onBarcodeChange: (value: string) => void;
+  onResetScan: () => void;
   onOpenScanner: () => void;
   onFetchProduct: () => void;
   loadingProduct: boolean;
@@ -42,9 +43,6 @@ type Props = {
   productName: string;
   productImageUrl: string;
   ingredientsText: string;
-  manualProductName: string;
-  onManualProductNameChange: (value: string) => void;
-  onUseManualName: () => void;
   // OCR
   processingOCR: boolean;
   manualOCRText: string;
@@ -57,6 +55,7 @@ type Props = {
 export function ScanScreen({
   barcode,
   onBarcodeChange,
+  onResetScan,
   onOpenScanner,
   onFetchProduct,
   loadingProduct,
@@ -64,9 +63,6 @@ export function ScanScreen({
   productName,
   productImageUrl,
   ingredientsText,
-  manualProductName,
-  onManualProductNameChange,
-  onUseManualName,
   processingOCR,
   manualOCRText,
   onManualOCRTextChange,
@@ -75,15 +71,36 @@ export function ScanScreen({
   ocrConfidence
 }: Props): React.ReactElement {
   const [mode, setMode] = useState<ScanMode>("barcode");
+  const enterAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [enterAnim]);
+
   const ocrPct = Math.round(ocrConfidence * 100);
   const ingredientTokens = parseIngredientTokens(ingredientsText);
   const visibleIngredients = ingredientTokens.slice(0, 16);
   const hiddenCount = Math.max(0, ingredientTokens.length - visibleIngredients.length);
 
   return (
-    <View style={s.root}>
+    <Animated.View
+      style={[
+        s.root,
+        {
+          opacity: enterAnim,
+          transform: [{ translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
+        }
+      ]}
+    >
 
       <View style={s.heroCard}>
+        <View style={s.heroOrbOne} />
+        <View style={s.heroOrbTwo} />
         <View style={s.heroIconWrap}>
           <Ionicons name="sparkles" size={18} color={C.emerald} />
         </View>
@@ -94,9 +111,15 @@ export function ScanScreen({
       </View>
 
       {/* ── Page heading ─────────────────────────────────────────── */}
-      <View style={s.heading}>
-        <Text style={s.headingTitle}>Scannen</Text>
-        <Text style={s.headingBody}>Barcode of foto van het etiket</Text>
+      <View style={s.headingRow}>
+        <View style={s.heading}>
+          <Text style={s.headingTitle}>Scannen</Text>
+          <Text style={s.headingBody}>Barcode of foto van het etiket</Text>
+        </View>
+        <TouchableOpacity style={s.resetBtn} onPress={onResetScan} activeOpacity={0.8}>
+          <Ionicons name="refresh-outline" size={14} color={C.textMuted} />
+          <Text style={s.resetBtnText}>Reset</Text>
+        </TouchableOpacity>
       </View>
 
       {/* ── Mode toggle ──────────────────────────────────────────── */}
@@ -196,21 +219,6 @@ export function ScanScreen({
           </View>
 
           <View style={s.surface}>
-            <Text style={s.surfaceLabel}>Productnaam</Text>
-            <TextInput
-              value={productName || manualProductName}
-              onChangeText={onManualProductNameChange}
-              placeholder="bijv. Alpro Haver Drink"
-              style={s.textInput}
-              placeholderTextColor={C.textSubtle}
-            />
-            {!productName && manualProductName.trim() ? (
-              <TouchableOpacity style={s.linkBtn} onPress={onUseManualName}>
-                <Text style={s.linkBtnText}>Gebruik als productnaam →</Text>
-              </TouchableOpacity>
-            ) : null}
-
-            <View style={s.fieldGap} />
             <Text style={s.surfaceLabel}>Ingrediëntenlijst</Text>
             {ingredientTokens.length > 0 ? (
               <View style={s.ingredientsCard}>
@@ -264,6 +272,16 @@ export function ScanScreen({
               </TouchableOpacity>
             </View>
 
+            <View style={s.liveCoachCard}>
+              <View style={s.liveCoachHead}>
+                <Ionicons name="sparkles-outline" size={14} color="#FF7A59" />
+                <Text style={s.liveCoachTitle}>Label Coach Live</Text>
+              </View>
+              <Text style={s.liveCoachText}>
+                Tip: richt op de ingrediëntenlijst, vermijd reflectie en hou de camera 20-30 cm van het label.
+              </Text>
+            </View>
+
             {processingOCR ? (
               <View style={s.processingRow}>
                 <ActivityIndicator size="small" color={C.emerald} />
@@ -314,7 +332,7 @@ export function ScanScreen({
           </View>
         </>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -322,21 +340,46 @@ const s = StyleSheet.create({
   root: {
     gap: 10
   },
+  headingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 10
+  },
   heroCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#FFE8C7",
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.09)",
+    borderColor: "rgba(220,166,96,0.55)",
     padding: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10
+    gap: 10,
+    overflow: "hidden"
+  },
+  heroOrbOne: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    right: -25,
+    top: -40
+  },
+  heroOrbTwo: {
+    position: "absolute",
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255,122,89,0.18)",
+    right: 46,
+    bottom: -26
   },
   heroIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "rgba(16,185,129,0.12)",
+    backgroundColor: "rgba(255,255,255,0.72)",
     alignItems: "center",
     justifyContent: "center"
   },
@@ -347,15 +390,16 @@ const s = StyleSheet.create({
   heroTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#493329",
     letterSpacing: -0.2
   },
   heroBody: {
     fontSize: 12,
-    color: "#CBD5E1"
+    color: "#7E6457"
   },
   // Heading
   heading: {
+    flex: 1,
     paddingHorizontal: 2,
     paddingBottom: 4,
     gap: 2
@@ -371,10 +415,27 @@ const s = StyleSheet.create({
     color: C.textMuted,
     fontWeight: "400"
   },
+  resetBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: C.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    marginTop: 2
+  },
+  resetBtnText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: "600"
+  },
   // Toggle
   toggle: {
     flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.05)",
+    backgroundColor: "#FFEED9",
     borderRadius: 12,
     padding: 3,
     gap: 2
@@ -390,6 +451,8 @@ const s = StyleSheet.create({
   },
   toggleBtnActive: {
     backgroundColor: C.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,122,89,0.22)",
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -449,17 +512,17 @@ const s = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: C.emerald,
+    backgroundColor: "#FF7A59",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: C.emerald,
+    shadowColor: "#FF7A59",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3
   },
   searchBtnOff: {
-    backgroundColor: C.emeraldSoft,
+    backgroundColor: "#FFC7B8",
     shadowOpacity: 0
   },
   // Camera row
@@ -495,7 +558,7 @@ const s = StyleSheet.create({
     borderColor: "rgba(16,185,129,0.2)"
   },
   statusRowInfo: {
-    backgroundColor: "rgba(0,0,0,0.03)",
+    backgroundColor: "#FFF4E6",
     borderColor: C.border
   },
   statusText: {
@@ -575,20 +638,6 @@ const s = StyleSheet.create({
     letterSpacing: 0.4
   },
   // Text inputs
-  textInput: {
-    height: 44,
-    backgroundColor: C.surfaceRaised,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    fontWeight: "500",
-    color: C.text
-  },
-  fieldGap: {
-    height: 2
-  },
   ingredientsCard: {
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -643,7 +692,7 @@ const s = StyleSheet.create({
     fontWeight: "500"
   },
   ingredientChipMore: {
-    backgroundColor: "rgba(0,0,0,0.04)"
+    backgroundColor: "#FFE7D4"
   },
   ingredientChipMoreText: {
     fontSize: 12,
@@ -684,15 +733,6 @@ const s = StyleSheet.create({
     minHeight: 90,
     textAlignVertical: "top"
   },
-  linkBtn: {
-    alignSelf: "flex-start",
-    paddingTop: 2
-  },
-  linkBtnText: {
-    fontSize: 13,
-    color: C.emerald,
-    fontWeight: "600"
-  },
   // Photo buttons
   photoRow: {
     flexDirection: "row",
@@ -704,17 +744,17 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    backgroundColor: C.text,
+    backgroundColor: "#FF7A59",
     borderRadius: 13,
     paddingVertical: 13,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
+    shadowColor: "#FF7A59",
+    shadowOpacity: 0.24,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3
   },
   photoBtnAlt: {
-    backgroundColor: "rgba(0,0,0,0.05)",
+    backgroundColor: "#FFEFD9",
     shadowOpacity: 0
   },
   photoBtnText: {
@@ -783,6 +823,30 @@ const s = StyleSheet.create({
     backgroundColor: C.emerald
   },
   ocrHintText: {
+    fontSize: 12,
+    color: C.textMuted,
+    lineHeight: 17
+  },
+  liveCoachCard: {
+    marginTop: 6,
+    borderRadius: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,122,89,0.3)",
+    backgroundColor: "#FFF1E8",
+    padding: 10,
+    gap: 5
+  },
+  liveCoachHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  liveCoachTitle: {
+    fontSize: 12,
+    color: "#B5482E",
+    fontWeight: "700"
+  },
+  liveCoachText: {
     fontSize: 12,
     color: C.textMuted,
     lineHeight: 17

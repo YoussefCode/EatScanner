@@ -1,20 +1,20 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ScanHistoryEntry } from "../types/domain";
+import { ScanHistoryEntry, UserExperienceFeedback } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg: "#F7F6F5",
+  bg: "#FFF8EF",
   surface: "#FFFFFF",
-  surfaceRaised: "#FAFAF9",
-  border: "rgba(0,0,0,0.07)",
-  text: "#0C0B0A",
-  textMuted: "#8A8480",
-  textSubtle: "#B5B0AC",
-  emerald: "#10B981",
-  emeraldSoft: "rgba(16,185,129,0.10)",
-  emeraldBorder: "rgba(16,185,129,0.18)",
+  surfaceRaised: "#FFF4E6",
+  border: "rgba(138,114,91,0.20)",
+  text: "#35282A",
+  textMuted: "#7E6D6C",
+  textSubtle: "#B59E9A",
+  emerald: "#22C55E",
+  emeraldSoft: "rgba(34,197,94,0.12)",
+  emeraldBorder: "rgba(34,197,94,0.20)",
   rose: "#EF4444",
   roseSoft: "rgba(239,68,68,0.08)",
   roseBorder: "rgba(239,68,68,0.18)",
@@ -28,16 +28,43 @@ function formatDate(ts: number): string {
 
 type Props = {
   history: ScanHistoryEntry[];
+  reactionCount: number;
+  latestFeedbackByBarcode: Map<string, UserExperienceFeedback>;
   onClear: () => void;
   onSelectEntry: (entry: ScanHistoryEntry) => void;
 };
 
-export function HistoryScreen({ history, onClear, onSelectEntry }: Props): React.ReactElement {
+export function HistoryScreen({
+  history,
+  reactionCount,
+  latestFeedbackByBarcode,
+  onClear,
+  onSelectEntry
+}: Props): React.ReactElement {
+  const enterAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [enterAnim]);
+
   const safeCount = history.filter((entry) => entry.isSafe).length;
   const alertCount = history.length - safeCount;
 
   return (
-    <View style={s.root}>
+    <Animated.View
+      style={[
+        s.root,
+        {
+          opacity: enterAnim,
+          transform: [{ translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
+        }
+      ]}
+    >
 
       <View style={s.heroCard}>
         <View style={s.heroLogoWrap}>
@@ -57,6 +84,10 @@ export function HistoryScreen({ history, onClear, onSelectEntry }: Props): React
         <View style={[s.kpiChip, s.kpiChipAlert]}>
           <Text style={s.kpiEmoji}>⚠️</Text>
           <Text style={s.kpiText}>{alertCount} alerts</Text>
+        </View>
+        <View style={[s.kpiChip, s.kpiChipAlert]}>
+          <Text style={s.kpiEmoji}>🧪</Text>
+          <Text style={s.kpiText}>{reactionCount} reacties</Text>
         </View>
       </View>
 
@@ -100,6 +131,12 @@ export function HistoryScreen({ history, onClear, onSelectEntry }: Props): React
               onPress={() => onSelectEntry(entry)}
               activeOpacity={0.7}
             >
+              {entry.barcode && latestFeedbackByBarcode.get(entry.barcode) === "reaction" ? (
+                <View style={s.reactionTag}>
+                  <Text style={s.reactionTagText}>Reactie</Text>
+                </View>
+              ) : null}
+
               {/* Status dot */}
               <View style={[s.statusDot, entry.isSafe ? s.statusDotSafe : s.statusDotUnsafe]} />
 
@@ -130,7 +167,7 @@ export function HistoryScreen({ history, onClear, onSelectEntry }: Props): React
         </View>
       )}
 
-    </View>
+    </Animated.View>
   );
 }
 
@@ -139,10 +176,10 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#FFE0F0",
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(205,122,165,0.35)",
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -152,7 +189,7 @@ const s = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 11,
-    backgroundColor: "rgba(245,158,11,0.16)",
+    backgroundColor: "rgba(255,255,255,0.72)",
     alignItems: "center",
     justifyContent: "center"
   },
@@ -163,12 +200,12 @@ const s = StyleSheet.create({
   heroTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#F8FAFC",
+    color: "#6B3558",
     letterSpacing: -0.2
   },
   heroBody: {
     fontSize: 12,
-    color: "#CBD5E1"
+    color: "#915A78"
   },
   kpiRow: {
     flexDirection: "row",
@@ -295,7 +332,24 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
     backgroundColor: C.surface,
-    minHeight: 72
+    minHeight: 72,
+    position: "relative"
+  },
+  reactionTag: {
+    position: "absolute",
+    top: 6,
+    right: 8,
+    backgroundColor: C.roseSoft,
+    borderColor: C.roseBorder,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2
+  },
+  reactionTagText: {
+    fontSize: 10,
+    color: "#991B1B",
+    fontWeight: "700"
   },
   entryRowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,

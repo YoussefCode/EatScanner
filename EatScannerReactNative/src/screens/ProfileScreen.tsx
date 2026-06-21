@@ -1,20 +1,20 @@
-import React from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg: "#F7F6F5",
+  bg: "#FFF8EF",
   surface: "#FFFFFF",
-  surfaceRaised: "#FAFAF9",
-  border: "rgba(0,0,0,0.07)",
-  borderFocus: "rgba(0,0,0,0.18)",
-  text: "#0C0B0A",
-  textMuted: "#8A8480",
-  textSubtle: "#B5B0AC",
-  emerald: "#10B981",
-  emeraldSoft: "rgba(16,185,129,0.10)",
-  emeraldBorder: "rgba(16,185,129,0.18)",
+  surfaceRaised: "#FFF4E6",
+  border: "rgba(138,114,91,0.20)",
+  borderFocus: "rgba(255,122,89,0.30)",
+  text: "#35282A",
+  textMuted: "#7E6D6C",
+  textSubtle: "#B59E9A",
+  emerald: "#22C55E",
+  emeraldSoft: "rgba(34,197,94,0.12)",
+  emeraldBorder: "rgba(34,197,94,0.20)",
   rose: "#EF4444",
   roseSoft: "rgba(239,68,68,0.08)",
   roseBorder: "rgba(239,68,68,0.18)",
@@ -23,23 +23,52 @@ const C = {
 
 type Props = {
   blocked: string[];
-  newBlocked: string;
-  onNewBlockedChange: (value: string) => void;
-  onAddBlocked: () => void;
-  onRemoveBlocked: (value: string) => void;
-  supportedLanguages: string[];
+  dictionary: string[];
+  onToggleBlocked: (value: string) => void;
 };
 
 export function ProfileScreen({
   blocked,
-  newBlocked,
-  onNewBlockedChange,
-  onAddBlocked,
-  onRemoveBlocked,
-  supportedLanguages
+  dictionary,
+  onToggleBlocked
 }: Props): React.ReactElement {
+  const [query, setQuery] = useState("");
+  const enterAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [enterAnim]);
+
+  const filteredDictionary = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = q
+      ? dictionary.filter((item) => item.includes(q))
+      : dictionary;
+
+    return [...base].sort((a, b) => {
+      const aSelected = blocked.includes(a);
+      const bSelected = blocked.includes(b);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.localeCompare(b);
+    });
+  }, [query, dictionary, blocked]);
+
   return (
-    <View style={s.root}>
+    <Animated.View
+      style={[
+        s.root,
+        {
+          opacity: enterAnim,
+          transform: [{ translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
+        }
+      ]}
+    >
 
       <View style={s.heroCard}>
         <View style={s.heroLogo}>
@@ -66,22 +95,6 @@ export function ProfileScreen({
           </View>
         </View>
 
-        {/* Input row */}
-        <View style={s.inputRow}>
-          <TextInput
-            value={newBlocked}
-            onChangeText={onNewBlockedChange}
-            placeholder="Bijv. noten, gluten…"
-            placeholderTextColor={C.textSubtle}
-            style={s.input}
-            returnKeyType="done"
-            onSubmitEditing={onAddBlocked}
-          />
-          <TouchableOpacity style={s.addBtn} onPress={onAddBlocked} activeOpacity={0.85}>
-            <Ionicons name="add" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
         {/* Tags or empty hint */}
         {blocked.length > 0 ? (
           <View style={s.tagsWrap}>
@@ -89,7 +102,7 @@ export function ProfileScreen({
               <TouchableOpacity
                 key={item}
                 style={s.tag}
-                onPress={() => onRemoveBlocked(item)}
+                onPress={() => onToggleBlocked(item)}
                 activeOpacity={0.7}
               >
                 <Text style={s.tagEmoji}>🚫</Text>
@@ -106,26 +119,41 @@ export function ProfileScreen({
         )}
       </View>
 
-      {/* ── Supported languages surface ──────────────────────────── */}
+      {/* ── Dictionary surface ───────────────────────────────────── */}
       <View style={s.surface}>
         <View style={s.surfaceHeader}>
-          <Text style={s.surfaceTitle}>Talen</Text>
+          <Text style={s.surfaceTitle}>Kies uit vaste ingrediëntenlijst</Text>
         </View>
-        <View style={s.langList}>
-          {supportedLanguages.map((lang, idx) => (
-            <View
-              key={lang}
-              style={[s.langRow, idx < supportedLanguages.length - 1 && s.langRowBorder]}
-            >
-              <View style={s.langDot} />
-              <Text style={s.langName}>{lang}</Text>
-              <Ionicons name="checkmark" size={14} color={C.emerald} />
-            </View>
-          ))}
+
+        <View style={s.inputRow}>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Zoek ingredient..."
+            placeholderTextColor={C.textSubtle}
+            style={s.input}
+          />
         </View>
+
+        <ScrollView style={s.dictList} contentContainerStyle={s.dictListContent} nestedScrollEnabled>
+          {filteredDictionary.map((item) => {
+            const selected = blocked.includes(item);
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[s.dictItem, selected && s.dictItemSelected]}
+                onPress={() => onToggleBlocked(item)}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.dictItemText, selected && s.dictItemTextSelected]}>{item}</Text>
+                <Ionicons name={selected ? "checkbox" : "square-outline"} size={18} color={selected ? C.emerald : C.textSubtle} />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
-    </View>
+    </Animated.View>
   );
 }
 
@@ -134,10 +162,10 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#0F172A",
+    backgroundColor: "#DDF7FF",
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(106,164,196,0.35)",
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -147,7 +175,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "rgba(16,185,129,0.12)",
+    backgroundColor: "rgba(255,255,255,0.72)",
     alignItems: "center",
     justifyContent: "center"
   },
@@ -157,13 +185,13 @@ const s = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 14,
-    color: "#F8FAFC",
+    color: "#254252",
     fontWeight: "700",
     letterSpacing: -0.2
   },
   heroSub: {
     fontSize: 12,
-    color: "#CBD5E1"
+    color: "#497084"
   },
   // Heading
   heading: {
@@ -249,19 +277,6 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: C.text
   },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: C.text,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2
-  },
   // Tags
   tagsWrap: {
     flexDirection: "row",
@@ -299,31 +314,36 @@ const s = StyleSheet.create({
     color: C.textSubtle,
     fontWeight: "400"
   },
-  // Language list
-  langList: {
-    paddingHorizontal: 16
+  dictList: {
+    maxHeight: 260
   },
-  langRow: {
+  dictListContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    gap: 8
+  },
+  dictItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingVertical: 12
+    justifyContent: "space-between",
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    backgroundColor: C.surfaceRaised,
+    paddingHorizontal: 12,
+    paddingVertical: 10
   },
-  langRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: C.border
+  dictItemSelected: {
+    borderColor: C.emeraldBorder,
+    backgroundColor: C.emeraldSoft
   },
-  langDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: C.emerald,
-    flexShrink: 0
-  },
-  langName: {
-    flex: 1,
+  dictItemText: {
     fontSize: 14,
     color: C.text,
     fontWeight: "500"
+  },
+  dictItemTextSelected: {
+    color: "#065F46",
+    fontWeight: "700"
   }
 });

@@ -22,6 +22,77 @@ type EvaluateOptions = {
 };
 
 const DEFAULT_LOOKUP_TIMEOUT_MS = 600;
+const LABEL_NOISE = new Set([
+  "ingr",
+  "ingredienten",
+  "ingredients",
+  "ingredient",
+  "contains",
+  "bevat",
+  "allergene",
+  "allergen",
+  "allergens",
+  "sporen",
+  "trace",
+  "traces",
+  "farbstoff",
+  "farbstof",
+  "kleurstof",
+  "colorant",
+  "food coloring",
+  "kleurmiddel"
+]);
+
+const ALLERGEN_FOCUSED_TERMS = new Set([
+  "melk",
+  "milk",
+  "dairy",
+  "zuivel",
+  "lactose",
+  "noten",
+  "noot",
+  "nuts",
+  "pinda",
+  "peanut",
+  "soja",
+  "soy",
+  "soybean",
+  "sojaboon",
+  "gluten",
+  "tarwe",
+  "wheat",
+  "ei",
+  "egg",
+  "sesam",
+  "sesame",
+  "vis",
+  "fish",
+  "garnalen",
+  "shrimp",
+  "schaaldier",
+  "shellfish",
+  "mosterd",
+  "mustard",
+  "selderij",
+  "celery",
+  "lupine",
+  "sulfiet",
+  "sulfite",
+  "weekdier",
+  "mollusc"
+]);
+
+const CANDIDATE_NOISE = new Set([
+  "farbstoff",
+  "farbstof",
+  "kleurstof",
+  "colorant",
+  "food coloring",
+  "kleurmiddel",
+  "allergene",
+  "allergen",
+  "allergens"
+]);
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -172,6 +243,24 @@ function tokenSet(value: string): Set<string> {
   );
 }
 
+function isAllergenFocusedTerm(term: string): boolean {
+  const normalized = normalizeValue(term);
+  if (!normalized) return false;
+
+  if (ALLERGEN_FOCUSED_TERMS.has(normalized)) {
+    return true;
+  }
+
+  const tokens = tokenSet(normalized);
+  for (const token of tokens) {
+    if (ALLERGEN_FOCUSED_TERMS.has(token)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function dynamicCandidates(blockedTerm: string): Set<string> {
   const normalized = normalizeValue(blockedTerm);
   const candidates = new Set<string>([normalized, stemValue(normalized)]);
@@ -279,6 +368,9 @@ export async function evaluateSafety(
   const productAllergens = (options.productAllergens ?? []).map((value) => normalizeValue(value)).filter(Boolean);
   const lookupTimeoutMs = options.lookupTimeoutMs ?? DEFAULT_LOOKUP_TIMEOUT_MS;
   const localLexicon = options.localLexicon ?? {};
+  const allowShortAllergenTokens = blockedNormalized.some(
+    (term) => term.length <= 2 && isAllergenFocusedTerm(term)
+  );
 
   // --- Parallel online + ontology lookups (previously sequential) ---
   const onlineCandidatesMap = new Map<string, Set<string>>();
@@ -319,8 +411,18 @@ export async function evaluateSafety(
   const blockedTokenSetsMap = new Map<string, Set<string>>();
   for (const blocked of blockedNormalized) {
     const signals = new Set<string>(Array.from(dynamicCandidates(blocked)));
-    for (const c of onlineCandidatesMap.get(blocked) ?? []) { signals.add(c); signals.add(stemValue(c)); }
-    for (const c of ontologyCandidatesMap.get(blocked) ?? []) { signals.add(c); signals.add(stemValue(c)); }
+    for (const c of onlineCandidatesMap.get(blocked) ?? []) {
+      if (!CANDIDATE_NOISE.has(c)) {
+        signals.add(c);
+        signals.add(stemValue(c));
+      }
+    }
+    for (const c of ontologyCandidatesMap.get(blocked) ?? []) {
+      if (!CANDIDATE_NOISE.has(c)) {
+        signals.add(c);
+        signals.add(stemValue(c));
+      }
+    }
     candidateSetsMap.set(blocked, signals);
     blockedTokenSetsMap.set(blocked, tokenSet(blocked));
   }
@@ -329,14 +431,27 @@ export async function evaluateSafety(
 
   // --- Allergen-field check (fast path) ---
   for (const blocked of blockedNormalized) {
+    if (!isAllergenFocusedTerm(blocked)) {
+      continue;
+    }
+
     const candidateSignals = candidateSetsMap.get(blocked)!;
 
     const allergenHit = productAllergens.find((allergen) => {
+      if (LABEL_NOISE.has(allergen)) return false;
       const allergenStem = stemValue(allergen);
       if (candidateSignals.has(allergen) || candidateSignals.has(allergenStem)) return true;
       for (const candidate of candidateSignals) {
         if (!candidate) continue;
-        if (allergen.includes(candidate) || candidate.includes(allergen)) return true;
+          if (CANDIDATE_NOISE.has(candidate)) continue;
+
+        // Keep product-allergen matching strict to avoid broad false positives.
+        if (candidate.length <= 3) continue;
+
+        const allergenTokens = tokenSet(allergen);
+        if (allergenTokens.has(candidate) || allergenTokens.has(stemValue(candidate))) {
+          return true;
+        }
       }
       return false;
     });
@@ -357,13 +472,10 @@ export async function evaluateSafety(
   // Track which blocked terms already have allergen hits so we can skip them
   const allergenMatchedTerms = new Set(matches.map((m) => m.blockedTerm));
 
-  // Label words that appear in ingredient lists but are not ingredients
-  const LABEL_NOISE = new Set(["ingr", "ingredienten", "ingredients", "ingredient", "contains", "bevat"]);
-
   for (const ingredient of parsed) {
     if (isLikelyNutritionNoise(ingredient.original)) continue;
     // Skip OCR noise: single chars, very short fragments, and label keywords
-    if (ingredient.normalized.length < 3) continue;
+    if (ingredient.normalized.length < (allowShortAllergenTokens ? 2 : 3)) continue;
     if (LABEL_NOISE.has(ingredient.normalized)) continue;
 
     // Precompute tokenSet for this ingredient once (reused across blocked terms)
@@ -392,6 +504,7 @@ export async function evaluateSafety(
       if (!hit) {
         for (const candidate of candidates) {
           if (!candidate || candidate.length < 3) continue; // skip overly short candidates
+          if (CANDIDATE_NOISE.has(candidate)) continue;
           const candidateStem = stemValue(candidate);
           const isShortCandidate = candidate.length <= 3;
           const tokenContainsCandidate = ingredientTokens.has(candidate) || ingredientTokens.has(candidateStem);
@@ -476,7 +589,14 @@ export async function evaluateSafety(
 
   let uniqueMatches = mergeUniqueMatches(matches)
     // Drop matches where the matched fragment is suspiciously short (OCR noise)
-    .filter((m) => m.matchedFragment.trim().length >= 3);
+    .filter((m) => {
+      const fragmentLength = m.matchedFragment.trim().length;
+      if (fragmentLength >= 3) return true;
+      const blocked = normalizeValue(m.blockedTerm);
+      return blocked.length <= 2 && isAllergenFocusedTerm(blocked);
+    })
+    // Drop label-noise fragments such as "allergene" that are not ingredients.
+    .filter((m) => !LABEL_NOISE.has(normalizeValue(m.matchedFragment)));
 
   // LLM fallback is applied per blocked term that still has no hit.
   const matchedBlockedTerms = new Set(uniqueMatches.map((match) => match.blockedTerm));

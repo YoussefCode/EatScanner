@@ -3,6 +3,7 @@ import { normalizeValue } from "./parser";
 const candidateCache = new Map<string, string[]>();
 const LOOKUP_LANGUAGES = ["nl", "en", "de", "fr"] as const;
 const LOOKUP_LANG_SET = new Set<string>(LOOKUP_LANGUAGES);
+const FOODON_SEARCH_ENDPOINT = "https://www.ebi.ac.uk/ols4/api/search";
 const NOISE_TERMS = new Set([
   "food",
   "ingredient",
@@ -13,6 +14,15 @@ const NOISE_TERMS = new Set([
   "artikel",
   "nahrung",
   "aliment"
+]);
+const FOODON_LABEL_NOISE = new Set([
+  "process",
+  "surface",
+  "method",
+  "quality",
+  "treatment",
+  "equipment",
+  "material"
 ]);
 
 export const SUPPORTED_TRANSLATION_LANGUAGES = [
@@ -37,7 +47,7 @@ async function fetchTranslationCandidates(seedTerm: string): Promise<string[]> {
   const normalized = normalizeValue(seedTerm);
   if (!normalized) return [];
 
-  const sourceLanguages: Array<"nl" | "en" | "de" | "fr"> = ["nl", "en"];
+  const sourceLanguages: Array<"nl" | "en" | "de" | "fr"> = ["nl", "en", "de", "fr"];
   const translated: string[] = [];
 
   const requests: Promise<Response>[] = [];
@@ -110,6 +120,65 @@ async function fetchDatamuseCandidates(seedTerms: string[]): Promise<string[]> {
   }
 }
 
+async function fetchFoodOnCandidates(seedTerms: string[]): Promise<string[]> {
+  const seeds = seedTerms
+    .map((term) => normalizeValue(term))
+    .filter((term) => term.length >= 3)
+    .slice(0, 6);
+
+  if (seeds.length === 0) {
+    return [];
+  }
+
+  try {
+    const requests = seeds.map((seed) =>
+      fetch(
+        `${FOODON_SEARCH_ENDPOINT}?q=${encodeURIComponent(seed)}&ontology=foodon&rows=25&queryFields=label,synonym`
+      )
+    );
+
+    const responses = await Promise.all(requests);
+    const terms: string[] = [];
+
+    for (const response of responses) {
+      if (!response.ok) continue;
+
+      const data = (await response.json()) as {
+        response?: {
+          docs?: Array<{
+            short_form?: string;
+            label?: string;
+            exact_synonyms?: string[];
+            broad_synonyms?: string[];
+            narrow_synonyms?: string[];
+          }>;
+        };
+      };
+
+      for (const doc of data.response?.docs ?? []) {
+        const shortForm = doc.short_form ?? "";
+        // Keep FoodOn classes only; ignore imported non-food trees unless explicit UBERON milk entities.
+        const isFoodOnCore = shortForm.startsWith("FOODON_") || shortForm.startsWith("UBERON_");
+        if (!isFoodOnCore) continue;
+
+        const values = [doc.label ?? "", ...(doc.exact_synonyms ?? []), ...(doc.broad_synonyms ?? []), ...(doc.narrow_synonyms ?? [])];
+        for (const raw of values) {
+          const normalizedLabel = normalizeLabel(raw);
+          if (!normalizedLabel) continue;
+
+          const tokens = normalizedLabel.split(/\s+/).filter(Boolean);
+          if (tokens.some((token) => FOODON_LABEL_NOISE.has(token))) continue;
+          terms.push(normalizedLabel);
+        }
+      }
+    }
+
+    return cleanCandidateList(terms, seeds[0]).slice(0, 60);
+  } catch {
+    return [];
+  }
+}
+
 async function fetchSecondHopConceptCandidates(seedTerms: string[]): Promise<string[]> {
   const secondHopSeeds = seedTerms.map((term) => normalizeValue(term)).filter(Boolean).slice(0, 6);
   if (secondHopSeeds.length === 0) {
@@ -175,7 +244,8 @@ export async function fetchOnlineLexiconCandidates(blockedTerm: string): Promise
   try {
     const translationSeeds = await fetchTranslationCandidates(normalized);
     const datamuseSeeds = await fetchDatamuseCandidates([normalized, ...translationSeeds]);
-    const seedTerms = Array.from(new Set([normalized, ...translationSeeds, ...datamuseSeeds])).slice(0, 10);
+    const foodOnSeeds = await fetchFoodOnCandidates([normalized, ...translationSeeds, ...datamuseSeeds]);
+    const seedTerms = Array.from(new Set([normalized, ...translationSeeds, ...datamuseSeeds, ...foodOnSeeds])).slice(0, 12);
 
     const responsePromises: Promise<Response>[] = [];
     for (const term of seedTerms) {
@@ -193,7 +263,7 @@ export async function fetchOnlineLexiconCandidates(blockedTerm: string): Promise
 
     const responses = await Promise.all(responsePromises);
 
-    const labels: string[] = [...translationSeeds, ...datamuseSeeds];
+    const labels: string[] = [...translationSeeds, ...datamuseSeeds, ...foodOnSeeds];
     for (const response of responses) {
       if (!response.ok) continue;
 

@@ -1,5 +1,10 @@
 export type DetectionSource = "OCR" | "Product API" | "LLM";
 
+export type ContextMode = "home" | "restaurant" | "travel";
+export type TravelLanguage = "nl" | "en" | "de" | "fr" | "es";
+export type RiskLevel = "avoid" | "caution" | "trace";
+export type UserExperienceFeedback = "good" | "reaction";
+
 export type Product = {
   barcode: string;
   name: string;
@@ -42,4 +47,17 @@ export type ScanHistoryEntry = {
   productName: string;
   isSafe: boolean;
   matchedTerms: string[];
+};
+
+export type AppPreferences = {
+  contextMode: ContextMode;
+  travelLanguage: TravelLanguage;
+};
+
+export type ScanFeedbackEntry = {
+  id: string;
+  createdAt: number;
+  barcode: string;
+  productName: string;
+  feedback: UserExperienceFeedback;
 };

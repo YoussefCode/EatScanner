@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -12,18 +12,41 @@ import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { HistoryScreen } from "./src/screens/HistoryScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { ScanScreen } from "./src/screens/ScanScreen";
-import { evaluateSafety, warmCaches } from "./src/services/matcher";
-import { SUPPORTED_TRANSLATION_LANGUAGES } from "./src/services/onlineLexicon";
+import { evaluateSafety } from "./src/services/matcher";
 import { fetchProductByBarcode } from "./src/services/openFoodFactsService";
 import { extractTextFromImageWithQuality } from "./src/services/ocrService";
-import { normalizeValue } from "./src/services/parser";
-import { buildLexiconEntry } from "./src/services/lexiconBuilder";
-import { addScanHistoryEntry, clearScanHistory, loadBlockedIngredients, loadLocalLexicon, loadScanHistory, removeLexiconEntry, saveBlockedIngredients, saveLexiconEntry } from "./src/services/storage";
-import { IngredientMatch, SafetyResult, ScanHistoryEntry } from "./src/types/domain";
+import {
+  addScanFeedbackEntry,
+  addScanHistoryEntry,
+  clearScanHistory,
+  loadBlockedIngredients,
+  loadScanFeedback,
+  loadScanHistory,
+  saveBlockedIngredients
+} from "./src/services/storage";
+import { buildStaticLexicon, STATIC_INGREDIENT_DICTIONARY } from "./src/services/staticIngredientDictionary";
+import {
+  IngredientMatch,
+  SafetyResult,
+  ScanFeedbackEntry,
+  ScanHistoryEntry,
+  UserExperienceFeedback
+} from "./src/types/domain";
 
 const ONBOARDING_SEEN_KEY = "onboarding.seen.v1";
 
 type TextChunk = { text: string; highlighted: boolean };
+
+const REPLACEMENT_TIPS: Record<string, string[]> = {
+  ei: ["Kies vegan baked goods (zonder ei)", "Probeer appelmoes of lijnzaad als bak-alternatief", "Gebruik plantaardige mayonaise"],
+  perzik: ["Kies appel- of peercompote", "Neem bessen als fruitoptie", "Check pure fruitsappen zonder perzik-aroma"],
+  appel: ["Kies peer of perzik als alternatief fruit", "Gebruik bessenmix in plaats van appelmix", "Controleer op appelconcentraat in dranken"],
+  peer: ["Kies appel of perzik als alternatief", "Probeer druiven of bessen", "Vermijd blends met peer-puree"]
+};
+
+function normalizeTerm(value: string): string {
+  return value.trim().toLowerCase();
+}
 
 function normalizeBarcodeInput(value: string): string {
   return value.replace(/\D/g, "").trim();
@@ -112,14 +135,12 @@ function AppInner(): React.ReactElement {
   const [barcode, setBarcode] = useState("");
   const [productName, setProductName] = useState("");
   const [productImageUrl, setProductImageUrl] = useState("");
-  const [manualProductName, setManualProductName] = useState("");
   const [ingredientsText, setIngredientsText] = useState("");
   const [productAllergens, setProductAllergens] = useState<string[]>([]);
   const [ocrText, setOcrText] = useState("");
   const [manualOCRText, setManualOCRText] = useState("");
   const [ocrConfidence, setOcrConfidence] = useState(0);
   const [blocked, setBlocked] = useState<string[]>([]);
-  const [newBlocked, setNewBlocked] = useState("");
   const [result, setResult] = useState<SafetyResult | null>(null);
   const [analysisToast, setAnalysisToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -132,7 +153,8 @@ function AppInner(): React.ReactElement {
   const [onboardingSeen, setOnboardingSeen] = useState(false);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [scanHistory, setScanHistory] = useState<ScanHistoryEntry[]>([]);
-  const [localLexicon, setLocalLexicon] = useState<Record<string, string[]>>({});
+  const [scanFeedback, setScanFeedback] = useState<ScanFeedbackEntry[]>([]);
+  const [replacementTips, setReplacementTips] = useState<string[]>([]);
 
   const activeLookupIdRef = useRef(0);
   const lastLookupCodeRef = useRef("");
@@ -140,20 +162,29 @@ function AppInner(): React.ReactElement {
 
   useEffect(() => {
     void (async () => {
-      const [onboardingStored, values, lex, history] = await Promise.all([
+      const [onboardingStored, values, history, feedback] = await Promise.all([
         AsyncStorage.getItem(ONBOARDING_SEEN_KEY),
         loadBlockedIngredients(),
-        loadLocalLexicon(),
         loadScanHistory(),
+        loadScanFeedback(),
       ]);
 
-      setOnboardingSeen(onboardingStored === "1");
-      setBlocked(values);
-      setLocalLexicon(lex);
-      setScanHistory(history);
-      setBootstrapped(true);
+      const dictionaryMap = new Map(
+        STATIC_INGREDIENT_DICTIONARY.map((term) => [term.toLowerCase().trim(), term])
+      );
+      const normalizedBlocked = Array.from(
+        new Set(
+          values
+            .map((value) => dictionaryMap.get(value.toLowerCase().trim()))
+            .filter((value): value is string => Boolean(value))
+        )
+      );
 
-      warmCaches(values);
+      setOnboardingSeen(onboardingStored === "1");
+      setBlocked(normalizedBlocked);
+      setScanHistory(history);
+      setScanFeedback(feedback);
+      setBootstrapped(true);
     })();
   }, []);
 
@@ -187,6 +218,20 @@ function AppInner(): React.ReactElement {
   );
 
   const sourceLabel = result?.source ?? (ocrText ? "OCR" : "Product API");
+
+  const reactionCount = useMemo(
+    () => scanFeedback.filter((entry) => entry.feedback === "reaction").length,
+    [scanFeedback]
+  );
+
+  const latestFeedbackByBarcode = useMemo(() => {
+    const map = new Map<string, UserExperienceFeedback>();
+    for (const entry of scanFeedback) {
+      if (!entry.barcode || map.has(entry.barcode)) continue;
+      map.set(entry.barcode, entry.feedback);
+    }
+    return map;
+  }, [scanFeedback]);
 
   const refreshProduct = async (code: string): Promise<void> => {
     if (!code.trim()) {
@@ -309,12 +354,18 @@ function AppInner(): React.ReactElement {
 
     setEvaluatingSafety(true);
     try {
+      const staticLexicon = buildStaticLexicon(blocked);
       const safety = await evaluateSafety(text, blocked, ocrText ? "OCR" : "Product API", {
-        useOnlineLookup: true,
-        useOntologyLookup: true,
+        useOnlineLookup: false,
+        useOntologyLookup: false,
         productAllergens,
-        localLexicon
+        localLexicon: staticLexicon
       });
+
+      const matchedTerms = Array.from(new Set(safety.matches.map((m) => normalizeTerm(m.blockedTerm))));
+      const tips = matchedTerms.flatMap((term) => REPLACEMENT_TIPS[term] ?? []).slice(0, 4);
+
+      setReplacementTips(Array.from(new Set(tips)));
       setResult(safety);
       showAnalysisToast("success", safety.isSafe ? "Analyse klaar: veilig product" : "Analyse klaar: let op allergenen");
 
@@ -323,7 +374,7 @@ function AppInner(): React.ReactElement {
           id: `${Date.now()}-${barcode}`,
           scannedAt: Date.now(),
           barcode: barcode.trim(),
-          productName: productName.trim() || manualProductName.trim() || barcode.trim(),
+          productName: productName.trim() || barcode.trim(),
           isSafe: safety.isSafe,
           matchedTerms: safety.matches.map((m) => m.blockedTerm)
         };
@@ -337,41 +388,39 @@ function AppInner(): React.ReactElement {
     }
   };
 
-  const addBlocked = async (): Promise<void> => {
-    const normalized = normalizeValue(newBlocked);
-    if (!normalized) {
-      return;
-    }
-
-    if (blocked.includes(normalized)) {
-      setNewBlocked("");
-      return;
-    }
-
-    const updated = [...blocked, normalized].sort();
+  const toggleBlocked = async (value: string): Promise<void> => {
+    const updated = blocked.includes(value)
+      ? blocked.filter((item) => item !== value)
+      : [...blocked, value].sort();
     setBlocked(updated);
-    setNewBlocked("");
     await saveBlockedIngredients(updated);
-    warmCaches([normalized]);
-    // Build and persist local lexicon for the new term (fire-and-forget)
-    void buildLexiconEntry(normalized).then(async (candidates) => {
-      if (candidates.length > 0) {
-        await saveLexiconEntry(normalized, candidates);
-        setLocalLexicon((prev) => ({ ...prev, [normalized]: candidates }));
-      }
-    });
   };
 
-  const removeBlocked = async (value: string): Promise<void> => {
-    const updated = blocked.filter((item) => item !== value);
-    setBlocked(updated);
-    await saveBlockedIngredients(updated);
-    await removeLexiconEntry(value);
-    setLocalLexicon((prev) => {
-      const next = { ...prev };
-      delete next[value];
-      return next;
-    });
+  const handleFeedback = async (feedback: UserExperienceFeedback): Promise<void> => {
+    const entry: ScanFeedbackEntry = {
+      id: `${Date.now()}-${barcode || productName || "manual"}`,
+      createdAt: Date.now(),
+      barcode: barcode.trim(),
+      productName: productName.trim() || "Onbekend product",
+      feedback
+    };
+    const updated = await addScanFeedbackEntry(entry);
+    setScanFeedback(updated);
+    showAnalysisToast("success", feedback === "good" ? "Bedankt voor je feedback" : "Feedback opgeslagen als reactie");
+  };
+
+  const handleShareSafetyCard = async (): Promise<void> => {
+    if (!result) return;
+    const matched = result.matches.map((m) => m.blockedTerm).join(", ") || "geen matches";
+    const card = [
+      "EatScanner Safety Card",
+      `Product: ${productName || "Onbekend"}`,
+      `Status: ${result.isSafe ? "Veilig" : "Niet veilig"}`,
+      `Matches: ${matched}`,
+      `Score: ${Math.round(result.confidence * 100)}%`
+    ].join("\n");
+
+    await Share.share({ message: card });
   };
 
   const completeOnboarding = async (): Promise<void> => {
@@ -379,49 +428,63 @@ function AppInner(): React.ReactElement {
     await AsyncStorage.setItem(ONBOARDING_SEEN_KEY, "1");
   };
 
+  const resetScanAndCheck = (): void => {
+    setBarcode("");
+    setProductName("");
+    setProductImageUrl("");
+    setIngredientsText("");
+    setProductAllergens([]);
+    setOcrText("");
+    setManualOCRText("");
+    setOcrConfidence(0);
+    setProductLookupMessage("");
+    setResult(null);
+    setAnalysisToast(null);
+    setReplacementTips([]);
+  };
+
   const renderCurrentPage = (): React.ReactElement => {
     if (activeTab === "scan") {
       return (
-        <ScanScreen
-          barcode={barcode}
-          onBarcodeChange={(value) => setBarcode(normalizeBarcodeInput(value))}
-          onOpenScanner={() => setScannerVisible(true)}
-          onFetchProduct={() => void refreshProduct(barcode)}
-          loadingProduct={loadingProduct}
-          lookupMessage={productLookupMessage}
-          productName={productName}
-          productImageUrl={productImageUrl}
-          ingredientsText={ingredientsText}
-          manualProductName={manualProductName}
-          onManualProductNameChange={setManualProductName}
-          onUseManualName={() => setProductName(manualProductName.trim())}
-          processingOCR={processingOCR}
-          manualOCRText={manualOCRText}
-          onManualOCRTextChange={(value) => {
-            setManualOCRText(value);
-            setOcrText(value);
-            setIngredientsText(value);
-            setOcrConfidence(estimateOCRConfidence(value));
-          }}
-          onTakePhoto={() => void processPhoto(true)}
-          onUploadPhoto={() => void processPhoto(false)}
-          ocrConfidence={Math.max(ocrConfidence, ocrConfidenceFallback)}
-        />
-      );
-    }
+        <>
+          <ScanScreen
+            barcode={barcode}
+            onBarcodeChange={(value) => setBarcode(normalizeBarcodeInput(value))}
+            onResetScan={resetScanAndCheck}
+            onOpenScanner={() => setScannerVisible(true)}
+            onFetchProduct={() => void refreshProduct(barcode)}
+            loadingProduct={loadingProduct}
+            lookupMessage={productLookupMessage}
+            productName={productName}
+            productImageUrl={productImageUrl}
+            ingredientsText={ingredientsText}
+            processingOCR={processingOCR}
+            manualOCRText={manualOCRText}
+            onManualOCRTextChange={(value) => {
+              setManualOCRText(value);
+              setOcrText(value);
+              setIngredientsText(value);
+              setOcrConfidence(estimateOCRConfidence(value));
+            }}
+            onTakePhoto={() => void processPhoto(true)}
+            onUploadPhoto={() => void processPhoto(false)}
+            ocrConfidence={Math.max(ocrConfidence, ocrConfidenceFallback)}
+          />
 
-    if (activeTab === "check") {
-      return (
-        <CheckScreen
-          evaluatingSafety={evaluatingSafety}
-          onEvaluate={() => void handleEvaluate()}
-          result={result}
-          sourceLabel={sourceLabel}
-          highlightedChunks={highlightedChunks}
-          productName={productName}
-          productImageUrl={productImageUrl}
-          analysisToast={analysisToast}
-        />
+          <CheckScreen
+            evaluatingSafety={evaluatingSafety}
+            onEvaluate={() => void handleEvaluate()}
+            result={result}
+            sourceLabel={sourceLabel}
+            highlightedChunks={highlightedChunks}
+            productName={productName}
+            productImageUrl={productImageUrl}
+            analysisToast={analysisToast}
+            replacementTips={replacementTips}
+            onFeedback={(value) => void handleFeedback(value)}
+            onShareSafetyCard={() => void handleShareSafetyCard()}
+          />
+        </>
       );
     }
 
@@ -429,6 +492,8 @@ function AppInner(): React.ReactElement {
       return (
         <HistoryScreen
           history={scanHistory}
+          reactionCount={reactionCount}
+          latestFeedbackByBarcode={latestFeedbackByBarcode}
           onClear={() => {
             void clearScanHistory().then(() => setScanHistory([]));
           }}
@@ -444,11 +509,8 @@ function AppInner(): React.ReactElement {
     return (
       <ProfileScreen
         blocked={blocked}
-        newBlocked={newBlocked}
-        onNewBlockedChange={setNewBlocked}
-        onAddBlocked={() => void addBlocked()}
-        onRemoveBlocked={(value) => void removeBlocked(value)}
-        supportedLanguages={SUPPORTED_TRANSLATION_LANGUAGES}
+        dictionary={STATIC_INGREDIENT_DICTIONARY}
+        onToggleBlocked={(value) => void toggleBlocked(value)}
       />
     );
   };
@@ -474,6 +536,8 @@ function AppInner(): React.ReactElement {
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
+      <View pointerEvents="none" style={styles.backdropBlobA} />
+      <View pointerEvents="none" style={styles.backdropBlobB} />
       <BarcodeScannerModal
         visible={scannerVisible}
         onClose={() => setScannerVisible(false)}
@@ -523,14 +587,14 @@ export default function App(): React.ReactElement {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#0C0B0A"
+    backgroundColor: "#FFF4E8"
   },
   topBar: {
-    backgroundColor: "#0C0B0A",
+    backgroundColor: "#FFEAD1",
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.07)"
+    borderBottomColor: "rgba(138,114,91,0.24)"
   },
   wordmark: {
     flexDirection: "row",
@@ -541,17 +605,17 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#10B981"
+    backgroundColor: "#FF7A59"
   },
   appName: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#F7F6F5",
+    color: "#3B2D2F",
     letterSpacing: -0.4
   },
   scrollArea: {
     flex: 1,
-    backgroundColor: "#F7F6F5"
+    backgroundColor: "#FFF8EF"
   },
   content: {
     paddingHorizontal: 16,
@@ -567,5 +631,23 @@ const styles = StyleSheet.create({
   helper: {
     color: "#A8A29E",
     fontSize: 14
+  },
+  backdropBlobA: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: "rgba(255,122,89,0.16)",
+    top: -70,
+    right: -90
+  },
+  backdropBlobB: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    top: 130,
+    left: -110
   }
 });

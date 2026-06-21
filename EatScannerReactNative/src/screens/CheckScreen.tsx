@@ -1,20 +1,20 @@
-import React from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafetyResult } from "../types/domain";
+import { SafetyResult, UserExperienceFeedback } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg: "#F7F6F5",
+  bg: "#FFF8EF",
   surface: "#FFFFFF",
-  surfaceRaised: "#FAFAF9",
-  border: "rgba(0,0,0,0.07)",
-  text: "#0C0B0A",
-  textMuted: "#8A8480",
-  textSubtle: "#B5B0AC",
-  emerald: "#10B981",
-  emeraldSoft: "rgba(16,185,129,0.10)",
-  emeraldBorder: "rgba(16,185,129,0.18)",
+  surfaceRaised: "#FFF4E6",
+  border: "rgba(138,114,91,0.20)",
+  text: "#35282A",
+  textMuted: "#7E6D6C",
+  textSubtle: "#B59E9A",
+  emerald: "#22C55E",
+  emeraldSoft: "rgba(34,197,94,0.12)",
+  emeraldBorder: "rgba(34,197,94,0.20)",
   rose: "#EF4444",
   roseSoft: "rgba(239,68,68,0.08)",
   roseBorder: "rgba(239,68,68,0.18)",
@@ -32,6 +32,9 @@ type Props = {
   productName: string;
   productImageUrl: string;
   analysisToast: { type: "success" | "error"; message: string } | null;
+  replacementTips: string[];
+  onFeedback: (value: UserExperienceFeedback) => void;
+  onShareSafetyCard: () => void;
 };
 
 export function CheckScreen({
@@ -42,17 +45,39 @@ export function CheckScreen({
   highlightedChunks,
   productName,
   productImageUrl,
-  analysisToast
+  analysisToast,
+  replacementTips,
+  onFeedback,
+  onShareSafetyCard
 }: Props): React.ReactElement {
+  const enterAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 360,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [enterAnim]);
 
   const isSafe = result?.isSafe;
 
   return (
-    <View style={s.root}>
+    <Animated.View
+      style={[
+        s.root,
+        {
+          opacity: enterAnim,
+          transform: [{ translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
+        }
+      ]}
+    >
 
       <View style={s.heroCard}>
-        <Ionicons name="medal-outline" size={18} color={C.amber} />
-        <Text style={s.heroText}>Smart Safety AI · uitleg per match 🧠</Text>
+        <View style={s.heroSpark} />
+        <Ionicons name="happy-outline" size={18} color="#FF7A59" />
+        <Text style={s.heroText}>Snack Check vibe · duidelijk en luchtig ✨</Text>
       </View>
 
       {/* ── Page heading ─────────────────────────────────────────── */}
@@ -178,6 +203,34 @@ export function CheckScreen({
               </Text>
             </View>
           )}
+
+          {replacementTips.length > 0 && (
+            <View style={s.surface}>
+              <Text style={s.sectionLabel}>Slim alternatief</Text>
+              {replacementTips.map((tip) => (
+                <View key={tip} style={s.tipRow}>
+                  <Ionicons name="sparkles-outline" size={13} color="#FF7A59" />
+                  <Text style={s.tipText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={s.feedbackRow}>
+            <TouchableOpacity style={s.feedbackBtn} onPress={() => onFeedback("good")} activeOpacity={0.85}>
+              <Ionicons name="thumbs-up-outline" size={15} color="#065F46" />
+              <Text style={s.feedbackText}>Voelde goed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.feedbackBtn, s.feedbackBtnAlert]} onPress={() => onFeedback("reaction")} activeOpacity={0.85}>
+              <Ionicons name="alert-circle-outline" size={15} color="#991B1B" />
+              <Text style={[s.feedbackText, s.feedbackTextAlert]}>Toch reactie</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={s.shareBtn} onPress={onShareSafetyCard} activeOpacity={0.85}>
+            <Ionicons name="share-social-outline" size={16} color="#7E6D6C" />
+            <Text style={s.shareBtnText}>Deel Safety Card</Text>
+          </TouchableOpacity>
         </>
       )}
 
@@ -198,7 +251,7 @@ export function CheckScreen({
         </Text>
       </TouchableOpacity>
 
-    </View>
+    </Animated.View>
   );
 }
 
@@ -207,19 +260,29 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#111827",
+    backgroundColor: "#FFE8C7",
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(220,166,96,0.55)",
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 8,
+    overflow: "hidden"
+  },
+  heroSpark: {
+    position: "absolute",
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    right: -18,
+    top: -30
   },
   heroText: {
     fontSize: 12,
-    color: "#E5E7EB",
+    color: "#5A433B",
     fontWeight: "600"
   },
   // Heading
@@ -523,17 +586,72 @@ const s = StyleSheet.create({
     fontWeight: "700",
     backgroundColor: C.roseSoft
   },
+  tipRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 7
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 13,
+    color: C.textMuted,
+    lineHeight: 18
+  },
+  feedbackRow: {
+    flexDirection: "row",
+    gap: 8
+  },
+  feedbackBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.emeraldBorder,
+    backgroundColor: C.emeraldSoft,
+    paddingVertical: 10
+  },
+  feedbackBtnAlert: {
+    borderColor: C.roseBorder,
+    backgroundColor: C.roseSoft
+  },
+  feedbackText: {
+    fontSize: 12,
+    color: "#065F46",
+    fontWeight: "700"
+  },
+  feedbackTextAlert: {
+    color: "#991B1B"
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    backgroundColor: C.surface,
+    paddingVertical: 10
+  },
+  shareBtnText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: "700"
+  },
   // Action button
   analyseBtn: {
-    backgroundColor: C.text,
+    backgroundColor: "#FF7A59",
     borderRadius: 14,
     paddingVertical: 15,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.14,
+    shadowColor: "#FF7A59",
+    shadowOpacity: 0.24,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4

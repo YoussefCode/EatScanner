@@ -183,4 +183,51 @@ describe("matcher", () => {
     expect(result.isSafe).toBe(false);
     expect(result.matches.some((m) => m.blockedTerm === "noedels" || m.blockedTerm === "nudlen")).toBe(true);
   });
+
+  it("does not map generic noodle term to product allergen soybean", async () => {
+    const result = await evaluateSafety("water, kruiden", ["noedels"], "Product API", {
+      useOnlineLookup: false,
+      useOntologyLookup: false,
+      productAllergens: ["soybeans"]
+    });
+
+    expect(result.isSafe).toBe(true);
+    expect(result.matches.some((m) => m.blockedTerm === "noedels")).toBe(false);
+  });
+
+  it("ignores allergene label-noise as matched fragment", async () => {
+    const result = await evaluateSafety("allergene, water, zout", ["melk"], "OCR", {
+      useOnlineLookup: false,
+      useOntologyLookup: false
+    });
+
+    expect(result.matches.some((m) => m.matchedFragment.toLowerCase() === "allergene")).toBe(false);
+  });
+
+  it("does not match olie from german farbstoff token", async () => {
+    const result = await evaluateSafety("nudeln, farbstoff, salz", ["olie"], "OCR", {
+      useOnlineLookup: false,
+      useOntologyLookup: false,
+      // Simulate ontology/lexicon noise that might map oil to colorant terms.
+      localLexicon: {
+        olie: ["farbstoff", "kleurstof", "colorant"]
+      }
+    });
+
+    expect(result.isSafe).toBe(true);
+    expect(result.matches.some((m) => m.blockedTerm === "olie")).toBe(false);
+  });
+
+  it("detects short allergen token ei in ingredient text", async () => {
+    const result = await evaluateSafety("water, tarwe, ei, zout", ["ei"], "OCR", {
+      useOnlineLookup: false,
+      useOntologyLookup: false,
+      localLexicon: {
+        ei: ["ei", "egg", "eieren"]
+      }
+    });
+
+    expect(result.isSafe).toBe(false);
+    expect(result.matches.some((m) => m.blockedTerm === "ei")).toBe(true);
+  });
 });

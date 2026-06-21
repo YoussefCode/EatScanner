@@ -14,7 +14,11 @@
       }
     },
     "android": {
-      "package": "com.eatscanner.reactnative"
+      "package": "com.eatscanner.reactnative",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -22,6 +26,11 @@
     "plugins": [
       "expo-camera",
       "expo-image-picker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a65f6877-9dc2-4252-aeaf-4d0759ba388a"
+      }
+    }
   }
 }
