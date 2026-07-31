@@ -587,14 +587,14 @@ export default function App(): React.ReactElement {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FFF4E8"
+    backgroundColor: "#DCEBFF"
   },
   topBar: {
-    backgroundColor: "#FFEAD1",
+    backgroundColor: "#C9E0FF",
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(138,114,91,0.24)"
+    borderBottomColor: "rgba(59,130,246,0.24)"
   },
   wordmark: {
     flexDirection: "row",
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
   },
   scrollArea: {
     flex: 1,
-    backgroundColor: "#FFF8EF"
+    backgroundColor: "#EAF3FF"
   },
   content: {
     paddingHorizontal: 16,
