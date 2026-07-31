@@ -76,8 +76,25 @@ export function CheckScreen({
 
       <View style={s.heroCard}>
         <View style={s.heroSpark} />
-        <Ionicons name="happy-outline" size={18} color="#FF7A59" />
-        <Text style={s.heroText}>Snack Check vibe · duidelijk en luchtig ✨</Text>
+        <View style={s.heroHeaderRow}>
+          <View style={s.heroIconBadge}>
+            <Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" />
+          </View>
+          <View style={s.heroHeaderTextWrap}>
+            <Text style={s.heroTitle}>Analyse center</Text>
+            <Text style={s.heroText}>Duidelijk verdict, minder twijfel, sneller beslissen.</Text>
+          </View>
+        </View>
+        <View style={s.heroChipsRow}>
+          <View style={s.heroChip}>
+            <Ionicons name="flash-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroChipText}>Live scan flow</Text>
+          </View>
+          <View style={s.heroChip}>
+            <Ionicons name="analytics-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroChipText}>Confidence score</Text>
+          </View>
+        </View>
       </View>
 
       {/* ── Page heading ─────────────────────────────────────────── */}
@@ -101,10 +118,24 @@ export function CheckScreen({
       {!result ? (
         <View style={s.preCard}>
           <View style={s.preIconRing}>
-            <Ionicons name="shield-outline" size={32} color={C.textSubtle} />
+            <Ionicons name="shield-outline" size={32} color="#1D4ED8" />
           </View>
-          <Text style={s.preTitle}>Nog niet gecontroleerd</Text>
-          <Text style={s.preBody}>Druk hieronder op "Analyseer" om de ingrediënten te scannen op jouw geblokkeerde stoffen.</Text>
+          <Text style={s.preTitle}>Klaar voor analyse</Text>
+          <Text style={s.preBody}>Zodra barcode of ingrediënten binnen zijn, krijg je hier een heldere veiligheidscheck met confidence score.</Text>
+          <View style={s.preStepsRow}>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>1</Text>
+              <Text style={s.preStepText}>Scan product</Text>
+            </View>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>2</Text>
+              <Text style={s.preStepText}>Check matches</Text>
+            </View>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>3</Text>
+              <Text style={s.preStepText}>Beslis sneller</Text>
+            </View>
+          </View>
         </View>
       ) : (
         <>
@@ -260,30 +291,73 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#FFE8C7",
-    borderRadius: 14,
+    backgroundColor: "#EEF6FF",
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(220,166,96,0.55)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 14,
+    gap: 12,
     overflow: "hidden"
   },
   heroSpark: {
     position: "absolute",
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    right: -18,
-    top: -30
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.55)",
+    right: -20,
+    top: -26
+  },
+  heroHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  heroIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.14)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  heroHeaderTextWrap: {
+    flex: 1,
+    gap: 2
+  },
+  heroTitle: {
+    fontSize: 14,
+    color: "#1D4ED8",
+    fontWeight: "800",
+    letterSpacing: -0.2
   },
   heroText: {
     fontSize: 12,
-    color: "#5A433B",
+    color: "#5E718A",
     fontWeight: "600"
+  },
+  heroChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  heroChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
+  },
+  heroChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.textMuted
   },
   // Heading
   heading: {
@@ -328,12 +402,12 @@ const s = StyleSheet.create({
   // Pre-check
   preCard: {
     backgroundColor: C.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
-    padding: 28,
+    padding: 24,
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -341,19 +415,19 @@ const s = StyleSheet.create({
     elevation: 1
   },
   preIconRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: C.surfaceRaised,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#EEF6FF",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.border,
+    borderColor: "rgba(59,130,246,0.16)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4
+    marginBottom: 2
   },
   preTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     color: C.text,
     letterSpacing: -0.3
   },
@@ -361,7 +435,42 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: C.textMuted,
     textAlign: "center",
-    lineHeight: 20
+    lineHeight: 21
+  },
+  preStepsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 2
+  },
+  preStepChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: C.surfaceRaised,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border
+  },
+  preStepIndex: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    textAlign: "center",
+    lineHeight: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(59,130,246,0.12)",
+    color: "#1D4ED8",
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  preStepText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: "600"
   },
   // Status banner
   productPreviewCard: {

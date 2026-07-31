@@ -21,24 +21,96 @@ type OCRPassOptions = {
   language: string;
   width: number;
   compress: number;
+  rotate?: number;
 };
 
-function cleanupOCRText(input: string): string {
+const INGREDIENT_SECTION_MARKERS = [
+  /ingredi[eë]nten/i,
+  /ingredients?/i,
+  /samenstelling/i,
+  /composition/i,
+  /bevat/i,
+  /contains/i,
+];
+
+const STOP_SECTION_MARKERS = [
+  /voedingswaarde/i,
+  /nutrition/i,
+  /gemiddelde voedingswaarde/i,
+  /bereiding/i,
+  /gebruiksaanwijzing/i,
+  /ten minste houdbaar/i,
+  /best before/i,
+  /fabrikant/i,
+  /distributeur/i,
+  /koel bewaren/i,
+  /bewaren/i,
+];
+
+export function cleanupOCRText(input: string): string {
   if (!input) return "";
 
   return input
-    // Join split words broken by line hyphenation.
     .replace(/([A-Za-zÀ-ÿ])-[\r\n]+([A-Za-zÀ-ÿ])/g, "$1$2")
+    .replace(/[•·●▪◦]/g, ", ")
+    .replace(/\bIngredie?nten?\b/gi, "Ingrediënten")
+    .replace(/\bIngr[e3]d[i1]e?nten?\b/gi, "Ingrediënten")
     .replace(/\r/g, "\n")
     .replace(/[ \t]+/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/,{2,}/g, ",")
     .replace(/\n{3,}/g, "\n\n")
     .split("\n")
     .map((line) => line.trim())
+    .filter((line, index, lines) => !(line === "" && lines[index - 1] === ""))
     .join("\n")
     .trim();
 }
 
-function estimatePassConfidence(text: string, response: OCRSpaceResponse): number {
+export function extractIngredientFocusedText(input: string): string {
+  const cleaned = cleanupOCRText(input);
+  if (!cleaned) return "";
+
+  const lines = cleaned
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return "";
+
+  const startIndex = lines.findIndex((line) => INGREDIENT_SECTION_MARKERS.some((marker) => marker.test(line)));
+  if (startIndex < 0) {
+    return cleaned;
+  }
+
+  let endIndex = lines.length;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    if (STOP_SECTION_MARKERS.some((marker) => marker.test(lines[index]))) {
+      endIndex = index;
+      break;
+    }
+  }
+
+  const focused = lines.slice(startIndex, endIndex).join("\n");
+  return cleanupOCRText(focused) || cleaned;
+}
+
+function estimateIngredientSignal(text: string): number {
+  if (!text.trim()) return 0;
+
+  const lower = text.toLowerCase();
+  const tokenCount = text.split(/\s+/).filter(Boolean).length;
+  const commaCount = (text.match(/,/g) ?? []).length;
+  const markerBoost = INGREDIENT_SECTION_MARKERS.some((marker) => marker.test(lower)) ? 0.12 : 0;
+  const allergenBoost = /(kan sporen bevatten|may contain|bevat)/i.test(lower) ? 0.06 : 0;
+  const lineBoost = text.includes("\n") ? 0.04 : 0;
+  const commaBoost = Math.min(0.12, commaCount / Math.max(6, tokenCount * 0.7));
+  const noisePenalty = /(www\.|http|facebook|instagram|barcode|scan)/i.test(lower) ? 0.06 : 0;
+
+  return markerBoost + allergenBoost + lineBoost + commaBoost - noisePenalty;
+}
+
+export function estimatePassConfidence(text: string, response: OCRSpaceResponse): number {
   if (!text.trim()) return 0;
 
   const tokenCount = text.split(/\s+/).filter(Boolean).length;
@@ -47,15 +119,42 @@ function estimatePassConfidence(text: string, response: OCRSpaceResponse): numbe
   const readableRatio = letters / Math.max(1, text.length);
   const symbolPenalty = Math.min(0.2, symbols / Math.max(1, text.length));
   const exitBoost = response.OCRExitCode === 1 ? 0.08 : 0;
+  const ingredientSignal = estimateIngredientSignal(text);
 
-  const raw = 0.3 + Math.min(0.4, tokenCount * 0.015) + readableRatio * 0.35 + exitBoost - symbolPenalty;
+  const raw = 0.3
+    + Math.min(0.4, tokenCount * 0.015)
+    + readableRatio * 0.3
+    + ingredientSignal
+    + exitBoost
+    - symbolPenalty;
+
   return Math.max(0.2, Math.min(0.99, raw));
 }
 
+export function scoreOCRCandidate(result: OCRExtractionResult): number {
+  const densityBoost = Math.min(0.12, result.text.length / 480);
+  return result.confidence + densityBoost + estimateIngredientSignal(result.text);
+}
+
+function chooseBestOCRCandidate(results: OCRExtractionResult[]): OCRExtractionResult {
+  return results.reduce((best, current) => {
+    if (scoreOCRCandidate(current) > scoreOCRCandidate(best)) {
+      return current;
+    }
+    return best;
+  });
+}
+
 async function runOCRPass(uri: string, options: OCRPassOptions): Promise<OCRExtractionResult> {
+  const actions: ImageManipulator.Action[] = [];
+  if (typeof options.rotate === "number") {
+    actions.push({ rotate: options.rotate });
+  }
+  actions.push({ resize: { width: options.width } });
+
   const compressed = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: options.width } }],
+    actions,
     { compress: options.compress, format: ImageManipulator.SaveFormat.JPEG }
   );
 
@@ -93,10 +192,12 @@ async function runOCRPass(uri: string, options: OCRPassOptions): Promise<OCRExtr
     .trim() ?? "";
 
   const cleaned = cleanupOCRText(parsed);
-  const confidence = estimatePassConfidence(cleaned, data);
+  const focused = extractIngredientFocusedText(cleaned);
+  const finalText = focused.length >= Math.max(28, Math.floor(cleaned.length * 0.35)) ? focused : cleaned;
+  const confidence = estimatePassConfidence(finalText, data);
 
   return {
-    text: cleaned,
+    text: finalText,
     confidence,
     pass: options.language === "dut" ? "primary" : "fallback"
   };
@@ -113,21 +214,43 @@ export async function extractTextFromImageWithQuality(uri: string): Promise<OCRE
     compress: 0.72
   });
 
-  const needsFallback = primary.text.length < 24 || primary.confidence < 0.58;
-  if (!needsFallback) {
-    return primary;
+  const candidates = [primary];
+
+  const needsDutchDetail = primary.text.length < 40 || primary.confidence < 0.7;
+  if (needsDutchDetail) {
+    candidates.push(await runOCRPass(uri, {
+      language: "dut",
+      width: 2400,
+      compress: 0.9
+    }));
   }
 
-  const fallback = await runOCRPass(uri, {
+  let best = chooseBestOCRCandidate(candidates);
+  if (best.text.length >= 42 && best.confidence >= 0.72) {
+    return best;
+  }
+
+  candidates.push(await runOCRPass(uri, {
     language: "eng",
     width: 2200,
     compress: 0.88
-  });
+  }));
 
-  const primaryScore = primary.confidence + Math.min(0.1, primary.text.length / 500);
-  const fallbackScore = fallback.confidence + Math.min(0.1, fallback.text.length / 500);
+  best = chooseBestOCRCandidate(candidates);
 
-  return fallbackScore > primaryScore ? fallback : primary;
+  const needsRotationRecovery = best.text.length < 28 || best.confidence < 0.55;
+  if (needsRotationRecovery) {
+    candidates.push(await runOCRPass(uri, {
+      language: "eng",
+      width: 2200,
+      compress: 0.9,
+      rotate: 90
+    }));
+
+    best = chooseBestOCRCandidate(candidates);
+  }
+
+  return best;
 }
 
 /**

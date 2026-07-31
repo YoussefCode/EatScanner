@@ -68,11 +68,11 @@ export function HistoryScreen({
 
       <View style={s.heroCard}>
         <View style={s.heroLogoWrap}>
-          <Ionicons name="sparkles" size={16} color="#F59E0B" />
+          <Ionicons name="time-outline" size={16} color="#1D4ED8" />
         </View>
         <View style={s.heroTextWrap}>
-          <Text style={s.heroTitle}>EatScanner Timeline 📚</Text>
-          <Text style={s.heroBody}>Alle checks in een branded overzicht met snelle status.</Text>
+          <Text style={s.heroTitle}>Scanhistorie</Text>
+          <Text style={s.heroBody}>Je recente controles, status en reacties overzichtelijk op één plek.</Text>
         </View>
       </View>
 
@@ -176,36 +176,38 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#FFE0F0",
-    borderRadius: 16,
+    backgroundColor: "#EEF6FF",
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(205,122,165,0.35)",
-    padding: 12,
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 10
   },
   heroLogoWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.88)",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
   },
   heroTextWrap: {
     flex: 1,
     gap: 2
   },
   heroTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6B3558",
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1D4ED8",
     letterSpacing: -0.2
   },
   heroBody: {
     fontSize: 12,
-    color: "#915A78"
+    color: "#5E718A"
   },
   kpiRow: {
     flexDirection: "row",
