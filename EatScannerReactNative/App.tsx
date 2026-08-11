@@ -28,6 +28,7 @@ import {
 import { buildStaticLexicon, STATIC_INGREDIENT_DICTIONARY } from "./src/services/staticIngredientDictionary";
 import {
   IngredientMatch,
+  NutritionSummary,
   SafetyResult,
   ScanFeedbackEntry,
   ScanHistoryEntry,
@@ -137,6 +138,7 @@ function AppInner(): React.ReactElement {
   const [productName, setProductName] = useState("");
   const [productImageUrl, setProductImageUrl] = useState("");
   const [ingredientsText, setIngredientsText] = useState("");
+  const [productNutrition, setProductNutrition] = useState<NutritionSummary | null>(null);
   const [productAllergens, setProductAllergens] = useState<string[]>([]);
   const [ocrText, setOcrText] = useState("");
   const [manualOCRText, setManualOCRText] = useState("");
@@ -334,6 +336,7 @@ function AppInner(): React.ReactElement {
       if (!product) {
         setProductName("");
         setProductImageUrl("");
+        setProductNutrition(null);
         setProductAllergens([]);
         setProductLookupMessage("Geen product gevonden voor deze barcode. Vul handmatig een naam in.");
         return;
@@ -344,6 +347,7 @@ function AppInner(): React.ReactElement {
 
       setProductName(product.name);
       setProductImageUrl(product.imageUrl ?? "");
+      setProductNutrition(product.nutrition ?? null);
       setProductAllergens(nextAllergens);
       setProductLookupMessage(`Product gevonden: ${product.name}`);
       if (nextIngredientsText) {
@@ -475,6 +479,7 @@ function AppInner(): React.ReactElement {
     setProductName("");
     setProductImageUrl("");
     setIngredientsText("");
+    setProductNutrition(null);
     setProductAllergens([]);
     setOcrText("");
     setManualOCRText("");
@@ -505,6 +510,7 @@ function AppInner(): React.ReactElement {
             lookupMessage={productLookupMessage}
             productName={productName}
             productImageUrl={productImageUrl}
+            productNutrition={productNutrition}
             ingredientsText={ingredientsText}
             shoppingMode={shoppingMode}
             onShoppingModeChange={setShoppingMode}
@@ -529,6 +535,7 @@ function AppInner(): React.ReactElement {
             highlightedChunks={highlightedChunks}
             productName={productName}
             productImageUrl={productImageUrl}
+            productNutrition={productNutrition}
             analysisToast={analysisToast}
             replacementTips={replacementTips}
             onFeedback={(value) => void handleFeedback(value)}
@@ -614,7 +621,7 @@ function AppInner(): React.ReactElement {
               <View style={styles.wordmarkDot} />
               <Text style={styles.appName}>EatScanner</Text>
             </View>
-            <Text style={styles.appSubtitle}>Slim en rustig ingrediënten checken</Text>
+            <Text style={styles.appSubtitle}>Snelle ingrediëntencheck</Text>
           </View>
 
           <View style={styles.headerPill}>

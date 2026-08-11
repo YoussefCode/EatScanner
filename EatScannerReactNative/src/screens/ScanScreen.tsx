@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { NutritionSummary } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -32,6 +33,12 @@ function parseIngredientTokens(value: string): string[] {
     .filter((token, index, arr) => arr.findIndex((t) => t.toLowerCase() === token.toLowerCase()) === index);
 }
 
+function formatMetric(value: number | undefined, unit: string): string | null {
+  if (value == null || Number.isNaN(value)) return null;
+  if (unit === "kcal") return `${Math.round(value)} ${unit}`;
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${unit}`;
+}
+
 type Props = {
   barcode: string;
   onBarcodeChange: (value: string) => void;
@@ -42,6 +49,7 @@ type Props = {
   lookupMessage: string;
   productName: string;
   productImageUrl: string;
+  productNutrition: NutritionSummary | null;
   ingredientsText: string;
   shoppingMode: boolean;
   onShoppingModeChange: (value: boolean) => void;
@@ -64,6 +72,7 @@ export function ScanScreen({
   lookupMessage,
   productName,
   productImageUrl,
+  productNutrition,
   ingredientsText,
   shoppingMode,
   onShoppingModeChange,
@@ -96,6 +105,13 @@ export function ScanScreen({
   const ingredientTokens = parseIngredientTokens(ingredientsText);
   const visibleIngredients = ingredientTokens.slice(0, 16);
   const hiddenCount = Math.max(0, ingredientTokens.length - visibleIngredients.length);
+  const nutritionItems = [
+    { label: "kcal", value: formatMetric(productNutrition?.caloriesPer100g, "kcal") },
+    { label: "vet", value: formatMetric(productNutrition?.fatPer100g, "g") },
+    { label: "suiker", value: formatMetric(productNutrition?.sugarsPer100g, "g") },
+    { label: "eiwit", value: formatMetric(productNutrition?.proteinsPer100g, "g") },
+    { label: "zout", value: formatMetric(productNutrition?.saltPer100g, "g") }
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
 
   return (
     <Animated.View
@@ -120,10 +136,8 @@ export function ScanScreen({
         <View style={s.heroMainRow}>
           <View style={s.heroTextWrap}>
             <Text style={s.heroTitle}>Food Guard</Text>
-            <Text style={s.heroHeadline}>Check eten sneller, rustiger en slimmer.</Text>
-            <Text style={s.heroBody}>
-              Scan een barcode of etiket en zie meteen of het past bij jouw allergieën.
-            </Text>
+            <Text style={s.heroHeadline}>Snel eten checken.</Text>
+            <Text style={s.heroBody}>Scan barcode of etiket.</Text>
           </View>
 
           <View style={s.heroVisual}>
@@ -140,11 +154,11 @@ export function ScanScreen({
         <View style={s.heroStatsRow}>
           <View style={s.heroStatChip}>
             <Ionicons name="barcode-outline" size={12} color={C.textMuted} />
-            <Text style={s.heroStatChipText}>Barcode + OCR</Text>
+            <Text style={s.heroStatChipText}>Barcode</Text>
           </View>
           <View style={s.heroStatChip}>
             <Ionicons name="flash-outline" size={12} color={C.textMuted} />
-            <Text style={s.heroStatChipText}>Direct resultaat</Text>
+            <Text style={s.heroStatChipText}>OCR</Text>
           </View>
         </View>
       </View>
@@ -176,12 +190,10 @@ export function ScanScreen({
               <Ionicons name="flash-outline" size={13} color={C.emerald} />
               <Text style={s.supermarketBadgeText}>Snelle flow</Text>
             </View>
-            <Text style={s.supermarketTitle}>Supermarktmodus staat aan</Text>
+            <Text style={s.supermarketTitle}>Winkelmodus aan</Text>
           </View>
 
-          <Text style={s.supermarketBody}>
-            Grotere scan-acties, minder afleiding en sneller door naar het volgende product.
-          </Text>
+          <Text style={s.supermarketBody}>Sneller scannen, minder afleiding.</Text>
 
           <View style={s.supermarketActions}>
             <TouchableOpacity style={s.supermarketPrimaryAction} onPress={onOpenScanner} activeOpacity={0.82}>
@@ -205,11 +217,11 @@ export function ScanScreen({
           <View style={s.supermarketTipsRow}>
             <View style={s.supermarketTipChip}>
               <Ionicons name="barcode-outline" size={12} color={C.textMuted} />
-              <Text style={s.supermarketTipChipText}>Scan eerst barcode</Text>
+              <Text style={s.supermarketTipChipText}>Barcode eerst</Text>
             </View>
             <View style={s.supermarketTipChip}>
               <Ionicons name="camera-outline" size={12} color={C.textMuted} />
-              <Text style={s.supermarketTipChipText}>OCR als backup</Text>
+              <Text style={s.supermarketTipChipText}>Foto als backup</Text>
             </View>
           </View>
         </View>
@@ -220,7 +232,7 @@ export function ScanScreen({
         <View style={s.heading}>
           <Text style={s.headingTitle}>Scannen</Text>
           <Text style={s.headingBody}>
-            {shoppingMode ? "Snelle winkelflow met barcode eerst" : "Barcode of foto van het etiket"}
+            {shoppingMode ? "Barcode eerst" : "Barcode of etiketfoto"}
           </Text>
         </View>
         <TouchableOpacity style={s.resetBtn} onPress={onResetScan} activeOpacity={0.8}>
@@ -260,8 +272,8 @@ export function ScanScreen({
                   <Ionicons name="scan-outline" size={18} color={C.emerald} />
                 </View>
                 <View style={s.supermarketScanStripTextWrap}>
-                  <Text style={s.supermarketScanStripTitle}>Open camera-scanner</Text>
-                  <Text style={s.supermarketScanStripBody}>Gemaakt voor snel producten checken in de winkel.</Text>
+                  <Text style={s.supermarketScanStripTitle}>Open scanner</Text>
+                  <Text style={s.supermarketScanStripBody}>Voor snelle checks.</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={C.textSubtle} />
               </TouchableOpacity>
@@ -309,7 +321,7 @@ export function ScanScreen({
           )}
 
           {/* ── Product found card ────────────────────────────────── */}
-          {productName && ingredientsText.trim() ? (
+          {productName ? (
             <View style={s.productCard}>
               <View style={s.productThumbWrap}>
                 {productImageUrl ? (
@@ -322,7 +334,19 @@ export function ScanScreen({
               </View>
               <View style={s.productCardLeft}>
                 <Text style={s.productCardName} numberOfLines={1}>{productName}</Text>
-                <Text style={s.productCardSub} numberOfLines={2}>{ingredientsText.slice(0, 80)}{ingredientsText.length > 80 ? "…" : ""}</Text>
+                {!!ingredientsText.trim() && (
+                  <Text style={s.productCardSub} numberOfLines={2}>{ingredientsText.slice(0, 80)}{ingredientsText.length > 80 ? "…" : ""}</Text>
+                )}
+                {nutritionItems.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.nutritionRow}>
+                    {nutritionItems.map((item) => (
+                      <View key={item.label} style={s.nutritionPill}>
+                        <Text style={s.nutritionPillLabel}>{item.label}</Text>
+                        <Text style={s.nutritionPillValue}>{item.value}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
               <View style={s.productCardBadge}>
                 <Ionicons name="checkmark" size={12} color={C.emerald} />
@@ -369,7 +393,7 @@ export function ScanScreen({
                 </View>
 
                 <Text style={s.ingredientsHint} numberOfLines={2}>
-                  Ruwe tekst is ingekort voor leesbaarheid. In Controle zie je de volledige analyse.
+                  Volledige tekst staat in Controle.
                 </Text>
               </View>
             ) : (
@@ -401,11 +425,9 @@ export function ScanScreen({
             <View style={s.liveCoachCard}>
               <View style={s.liveCoachHead}>
                 <Ionicons name="sparkles-outline" size={14} color="#FF7A59" />
-                <Text style={s.liveCoachTitle}>Label Coach Live</Text>
+                <Text style={s.liveCoachTitle}>Foto tip</Text>
               </View>
-              <Text style={s.liveCoachText}>
-                Tip: richt op de ingrediëntenlijst, vermijd reflectie en hou de camera 20-30 cm van het label.
-              </Text>
+              <Text style={s.liveCoachText}>Richt op ingrediënten, zonder reflectie.</Text>
             </View>
 
             {processingOCR ? (
@@ -426,8 +448,8 @@ export function ScanScreen({
                 </View>
                 <Text style={s.ocrHintText}>
                   {ocrPct >= 75
-                    ? "Ziet er goed uit. Je kunt analyseren."
-                    : "Kwaliteit is wat lager. Controleer even op OCR-foutjes."}
+                    ? "Ziet er goed uit."
+                    : "Check even op OCR-foutjes."}
                 </Text>
               </View>
             )}
@@ -968,7 +990,7 @@ const s = StyleSheet.create({
   },
   productCardLeft: {
     flex: 1,
-    gap: 3
+    gap: 6
   },
   productCardName: {
     fontSize: 15,
@@ -988,6 +1010,29 @@ const s = StyleSheet.create({
     backgroundColor: C.emeraldSoft,
     alignItems: "center",
     justifyContent: "center"
+  },
+  nutritionRow: {
+    gap: 6,
+    paddingRight: 8
+  },
+  nutritionPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(34,197,94,0.16)"
+  },
+  nutritionPillLabel: {
+    fontSize: 10,
+    color: C.textSubtle,
+    fontWeight: "700",
+    textTransform: "uppercase"
+  },
+  nutritionPillValue: {
+    fontSize: 12,
+    color: C.text,
+    fontWeight: "700"
   },
   nextProductBtn: {
     flexDirection: "row",

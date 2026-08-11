@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafetyResult, UserExperienceFeedback } from "../types/domain";
+import { NutritionSummary, SafetyResult, UserExperienceFeedback } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -23,6 +23,12 @@ const C = {
 
 type HighlightChunk = { text: string; highlighted: boolean };
 
+function formatMetric(value: number | undefined, unit: string): string | null {
+  if (value == null || Number.isNaN(value)) return null;
+  if (unit === "kcal") return `${Math.round(value)} ${unit}`;
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${unit}`;
+}
+
 type Props = {
   evaluatingSafety: boolean;
   onEvaluate: () => void;
@@ -31,6 +37,7 @@ type Props = {
   highlightedChunks: HighlightChunk[];
   productName: string;
   productImageUrl: string;
+  productNutrition: NutritionSummary | null;
   analysisToast: { type: "success" | "error"; message: string } | null;
   replacementTips: string[];
   onFeedback: (value: UserExperienceFeedback) => void;
@@ -45,6 +52,7 @@ export function CheckScreen({
   highlightedChunks,
   productName,
   productImageUrl,
+  productNutrition,
   analysisToast,
   replacementTips,
   onFeedback,
@@ -62,6 +70,13 @@ export function CheckScreen({
   }, [enterAnim]);
 
   const isSafe = result?.isSafe;
+  const nutritionItems = [
+    { label: "kcal", value: formatMetric(productNutrition?.caloriesPer100g, "kcal") },
+    { label: "vet", value: formatMetric(productNutrition?.fatPer100g, "g") },
+    { label: "suiker", value: formatMetric(productNutrition?.sugarsPer100g, "g") },
+    { label: "eiwit", value: formatMetric(productNutrition?.proteinsPer100g, "g") },
+    { label: "zout", value: formatMetric(productNutrition?.saltPer100g, "g") }
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
 
   return (
     <Animated.View
@@ -82,17 +97,17 @@ export function CheckScreen({
           </View>
           <View style={s.heroHeaderTextWrap}>
             <Text style={s.heroTitle}>Analyse center</Text>
-            <Text style={s.heroText}>Duidelijk verdict, minder twijfel, sneller beslissen.</Text>
+            <Text style={s.heroText}>Snel verdict.</Text>
           </View>
         </View>
         <View style={s.heroChipsRow}>
           <View style={s.heroChip}>
             <Ionicons name="flash-outline" size={12} color={C.textMuted} />
-            <Text style={s.heroChipText}>Live scan flow</Text>
+            <Text style={s.heroChipText}>Live</Text>
           </View>
           <View style={s.heroChip}>
             <Ionicons name="analytics-outline" size={12} color={C.textMuted} />
-            <Text style={s.heroChipText}>Confidence score</Text>
+            <Text style={s.heroChipText}>Score</Text>
           </View>
         </View>
       </View>
@@ -100,7 +115,7 @@ export function CheckScreen({
       {/* ── Page heading ─────────────────────────────────────────── */}
       <View style={s.heading}>
         <Text style={s.headingTitle}>Controle</Text>
-        <Text style={s.headingBody}>Allergenen analyse</Text>
+        <Text style={s.headingBody}>Allergenencheck</Text>
       </View>
 
       {analysisToast && (
@@ -121,19 +136,19 @@ export function CheckScreen({
             <Ionicons name="shield-outline" size={32} color="#1D4ED8" />
           </View>
           <Text style={s.preTitle}>Klaar voor analyse</Text>
-          <Text style={s.preBody}>Zodra barcode of ingrediënten binnen zijn, krijg je hier een heldere veiligheidscheck met confidence score.</Text>
+          <Text style={s.preBody}>Scan eerst een product of ingrediënten.</Text>
           <View style={s.preStepsRow}>
             <View style={s.preStepChip}>
               <Text style={s.preStepIndex}>1</Text>
-              <Text style={s.preStepText}>Scan product</Text>
+              <Text style={s.preStepText}>Scan</Text>
             </View>
             <View style={s.preStepChip}>
               <Text style={s.preStepIndex}>2</Text>
-              <Text style={s.preStepText}>Check matches</Text>
+              <Text style={s.preStepText}>Check</Text>
             </View>
             <View style={s.preStepChip}>
               <Text style={s.preStepIndex}>3</Text>
-              <Text style={s.preStepText}>Beslis sneller</Text>
+              <Text style={s.preStepText}>Klaar</Text>
             </View>
           </View>
         </View>
@@ -155,6 +170,20 @@ export function CheckScreen({
                 <Text style={s.productPreviewName} numberOfLines={2}>
                   {productName || "Onbekend product"}
                 </Text>
+              </View>
+            </View>
+          )}
+
+          {nutritionItems.length > 0 && (
+            <View style={s.surface}>
+              <Text style={s.sectionLabel}>Voeding per 100g</Text>
+              <View style={s.nutritionGrid}>
+                {nutritionItems.map((item) => (
+                  <View key={item.label} style={s.nutritionTile}>
+                    <Text style={s.nutritionTileLabel}>{item.label}</Text>
+                    <Text style={s.nutritionTileValue}>{item.value}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           )}
@@ -260,7 +289,7 @@ export function CheckScreen({
 
           <TouchableOpacity style={s.shareBtn} onPress={onShareSafetyCard} activeOpacity={0.85}>
             <Ionicons name="share-social-outline" size={16} color="#7E6D6C" />
-            <Text style={s.shareBtnText}>Deel Safety Card</Text>
+            <Text style={s.shareBtnText}>Deel</Text>
           </TouchableOpacity>
         </>
       )}
@@ -432,10 +461,10 @@ const s = StyleSheet.create({
     letterSpacing: -0.3
   },
   preBody: {
-    fontSize: 14,
+    fontSize: 13,
     color: C.textMuted,
     textAlign: "center",
-    lineHeight: 21
+    lineHeight: 19
   },
   preStepsRow: {
     flexDirection: "row",
@@ -522,6 +551,32 @@ const s = StyleSheet.create({
     color: C.text,
     fontWeight: "700",
     letterSpacing: -0.2
+  },
+  nutritionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  nutritionTile: {
+    minWidth: 86,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: C.surfaceRaised,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    gap: 3
+  },
+  nutritionTileLabel: {
+    fontSize: 10,
+    color: C.textSubtle,
+    fontWeight: "700",
+    textTransform: "uppercase"
+  },
+  nutritionTileValue: {
+    fontSize: 14,
+    color: C.text,
+    fontWeight: "700"
   },
 
   statusBanner: {
