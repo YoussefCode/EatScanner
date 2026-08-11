@@ -1,7 +1,0 @@
-** BUILD FAILED **
-
-
-The following build commands failed:
-	PhaseScriptExecution [CP]\ Check\ Pods\ Manifest.lock /Users/youssefelmourabit/Library/Developer/Xcode/DerivedData/EatScanner-cxahujcalaphrwazmnfqjlesvgsp/Build/Intermediates.noindex/EatScanner.build/Debug-iphonesimulator/EatScanner.build/Script-08A4A3CD28434E44B6B9DE2E.sh (in target 'EatScanner' from project 'EatScanner')
-	Building project EatScanner with scheme EatScanner and configuration Debug
-(2 failures)

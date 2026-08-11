@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { NutritionSummary } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -32,6 +33,12 @@ function parseIngredientTokens(value: string): string[] {
     .filter((token, index, arr) => arr.findIndex((t) => t.toLowerCase() === token.toLowerCase()) === index);
 }
 
+function formatMetric(value: number | undefined, unit: string): string | null {
+  if (value == null || Number.isNaN(value)) return null;
+  if (unit === "kcal") return `${Math.round(value)} ${unit}`;
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${unit}`;
+}
+
 type Props = {
   barcode: string;
   onBarcodeChange: (value: string) => void;
@@ -42,7 +49,10 @@ type Props = {
   lookupMessage: string;
   productName: string;
   productImageUrl: string;
+  productNutrition: NutritionSummary | null;
   ingredientsText: string;
+  shoppingMode: boolean;
+  onShoppingModeChange: (value: boolean) => void;
   // OCR
   processingOCR: boolean;
   manualOCRText: string;
@@ -62,7 +72,10 @@ export function ScanScreen({
   lookupMessage,
   productName,
   productImageUrl,
+  productNutrition,
   ingredientsText,
+  shoppingMode,
+  onShoppingModeChange,
   processingOCR,
   manualOCRText,
   onManualOCRTextChange,
@@ -82,10 +95,23 @@ export function ScanScreen({
     }).start();
   }, [enterAnim]);
 
+  useEffect(() => {
+    if (shoppingMode) {
+      setMode("barcode");
+    }
+  }, [shoppingMode]);
+
   const ocrPct = Math.round(ocrConfidence * 100);
   const ingredientTokens = parseIngredientTokens(ingredientsText);
   const visibleIngredients = ingredientTokens.slice(0, 16);
   const hiddenCount = Math.max(0, ingredientTokens.length - visibleIngredients.length);
+  const nutritionItems = [
+    { label: "kcal", value: formatMetric(productNutrition?.caloriesPer100g, "kcal") },
+    { label: "vet", value: formatMetric(productNutrition?.fatPer100g, "g") },
+    { label: "suiker", value: formatMetric(productNutrition?.sugarsPer100g, "g") },
+    { label: "eiwit", value: formatMetric(productNutrition?.proteinsPer100g, "g") },
+    { label: "zout", value: formatMetric(productNutrition?.saltPer100g, "g") }
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
 
   return (
     <Animated.View
@@ -101,20 +127,113 @@ export function ScanScreen({
       <View style={s.heroCard}>
         <View style={s.heroOrbOne} />
         <View style={s.heroOrbTwo} />
-        <View style={s.heroIconWrap}>
-          <Ionicons name="sparkles" size={18} color={C.emerald} />
+
+        <View style={s.heroBadge}>
+          <Ionicons name="shield-checkmark-outline" size={13} color="#1D4ED8" />
+          <Text style={s.heroBadgeText}>Slimme labelcheck</Text>
         </View>
-        <View style={s.heroTextWrap}>
-          <Text style={s.heroTitle}>Food Guard 🥗</Text>
-          <Text style={s.heroBody}>Scan sneller, begrijp direct wat veilig is voor jou.</Text>
+
+        <View style={s.heroMainRow}>
+          <View style={s.heroTextWrap}>
+            <Text style={s.heroTitle}>Food Guard</Text>
+            <Text style={s.heroHeadline}>Snel eten checken.</Text>
+            <Text style={s.heroBody}>Scan barcode of etiket.</Text>
+          </View>
+
+          <View style={s.heroVisual}>
+            <View style={s.heroIconWrap}>
+              <Ionicons name="sparkles" size={22} color={C.emerald} />
+            </View>
+            <View style={s.heroMiniCard}>
+              <Ionicons name="leaf-outline" size={12} color={C.emerald} />
+              <Text style={s.heroMiniCardText}>Veilige check</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={s.heroStatsRow}>
+          <View style={s.heroStatChip}>
+            <Ionicons name="barcode-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroStatChipText}>Barcode</Text>
+          </View>
+          <View style={s.heroStatChip}>
+            <Ionicons name="flash-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroStatChipText}>OCR</Text>
+          </View>
         </View>
       </View>
+
+      <View style={s.contextToggle}>
+        <TouchableOpacity
+          style={[s.contextPill, !shoppingMode && s.contextPillActive]}
+          onPress={() => onShoppingModeChange(false)}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="apps-outline" size={14} color={!shoppingMode ? C.emerald : C.textSubtle} />
+          <Text style={[s.contextPillLabel, !shoppingMode && s.contextPillLabelActive]}>Standaard</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[s.contextPill, shoppingMode && s.contextPillActive]}
+          onPress={() => onShoppingModeChange(true)}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="cart-outline" size={14} color={shoppingMode ? C.emerald : C.textSubtle} />
+          <Text style={[s.contextPillLabel, shoppingMode && s.contextPillLabelActive]}>Supermarkt mode</Text>
+        </TouchableOpacity>
+      </View>
+
+      {shoppingMode ? (
+        <View style={s.supermarketCard}>
+          <View style={s.supermarketHead}>
+            <View style={s.supermarketBadge}>
+              <Ionicons name="flash-outline" size={13} color={C.emerald} />
+              <Text style={s.supermarketBadgeText}>Snelle flow</Text>
+            </View>
+            <Text style={s.supermarketTitle}>Winkelmodus aan</Text>
+          </View>
+
+          <Text style={s.supermarketBody}>Sneller scannen, minder afleiding.</Text>
+
+          <View style={s.supermarketActions}>
+            <TouchableOpacity style={s.supermarketPrimaryAction} onPress={onOpenScanner} activeOpacity={0.82}>
+              <Ionicons name="scan-outline" size={18} color="#fff" />
+              <Text style={s.supermarketPrimaryActionText}>Direct scannen</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[s.supermarketSecondaryAction, (!barcode || loadingProduct) && s.supermarketSecondaryActionDisabled]}
+              onPress={onFetchProduct}
+              disabled={!barcode || loadingProduct}
+              activeOpacity={0.82}
+            >
+              {loadingProduct
+                ? <ActivityIndicator size="small" color={C.text} />
+                : <Ionicons name="search-outline" size={18} color={C.text} />}
+              <Text style={s.supermarketSecondaryActionText}>Snel ophalen</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={s.supermarketTipsRow}>
+            <View style={s.supermarketTipChip}>
+              <Ionicons name="barcode-outline" size={12} color={C.textMuted} />
+              <Text style={s.supermarketTipChipText}>Barcode eerst</Text>
+            </View>
+            <View style={s.supermarketTipChip}>
+              <Ionicons name="camera-outline" size={12} color={C.textMuted} />
+              <Text style={s.supermarketTipChipText}>Foto als backup</Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
 
       {/* ── Page heading ─────────────────────────────────────────── */}
       <View style={s.headingRow}>
         <View style={s.heading}>
           <Text style={s.headingTitle}>Scannen</Text>
-          <Text style={s.headingBody}>Barcode of foto van het etiket</Text>
+          <Text style={s.headingBody}>
+            {shoppingMode ? "Barcode eerst" : "Barcode of etiketfoto"}
+          </Text>
         </View>
         <TouchableOpacity style={s.resetBtn} onPress={onResetScan} activeOpacity={0.8}>
           <Ionicons name="refresh-outline" size={14} color={C.textMuted} />
@@ -147,6 +266,18 @@ export function ScanScreen({
           {/* ── Barcode input surface ──────────────────────────────── */}
           <View style={s.surface}>
             <Text style={s.surfaceLabel}>Cijfercode</Text>
+            {shoppingMode ? (
+              <TouchableOpacity style={s.supermarketScanStrip} onPress={onOpenScanner} activeOpacity={0.8}>
+                <View style={s.supermarketScanStripIcon}>
+                  <Ionicons name="scan-outline" size={18} color={C.emerald} />
+                </View>
+                <View style={s.supermarketScanStripTextWrap}>
+                  <Text style={s.supermarketScanStripTitle}>Open scanner</Text>
+                  <Text style={s.supermarketScanStripBody}>Voor snelle checks.</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={C.textSubtle} />
+              </TouchableOpacity>
+            ) : null}
             <View style={s.inputRow}>
               <TextInput
                 value={barcode}
@@ -190,7 +321,7 @@ export function ScanScreen({
           )}
 
           {/* ── Product found card ────────────────────────────────── */}
-          {productName && ingredientsText.trim() ? (
+          {productName ? (
             <View style={s.productCard}>
               <View style={s.productThumbWrap}>
                 {productImageUrl ? (
@@ -203,12 +334,31 @@ export function ScanScreen({
               </View>
               <View style={s.productCardLeft}>
                 <Text style={s.productCardName} numberOfLines={1}>{productName}</Text>
-                <Text style={s.productCardSub} numberOfLines={2}>{ingredientsText.slice(0, 80)}{ingredientsText.length > 80 ? "…" : ""}</Text>
+                {!!ingredientsText.trim() && (
+                  <Text style={s.productCardSub} numberOfLines={2}>{ingredientsText.slice(0, 80)}{ingredientsText.length > 80 ? "…" : ""}</Text>
+                )}
+                {nutritionItems.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.nutritionRow}>
+                    {nutritionItems.map((item) => (
+                      <View key={item.label} style={s.nutritionPill}>
+                        <Text style={s.nutritionPillLabel}>{item.label}</Text>
+                        <Text style={s.nutritionPillValue}>{item.value}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
               <View style={s.productCardBadge}>
                 <Ionicons name="checkmark" size={12} color={C.emerald} />
               </View>
             </View>
+          ) : null}
+
+          {shoppingMode && productName ? (
+            <TouchableOpacity style={s.nextProductBtn} onPress={onResetScan} activeOpacity={0.82}>
+              <Ionicons name="arrow-forward-circle-outline" size={16} color={C.text} />
+              <Text style={s.nextProductBtnText}>Klaar? Start volgende product</Text>
+            </TouchableOpacity>
           ) : null}
 
           {/* ── Manual section ────────────────────────────────────── */}
@@ -243,7 +393,7 @@ export function ScanScreen({
                 </View>
 
                 <Text style={s.ingredientsHint} numberOfLines={2}>
-                  Ruwe tekst is ingekort voor leesbaarheid. In Controle zie je de volledige analyse.
+                  Volledige tekst staat in Controle.
                 </Text>
               </View>
             ) : (
@@ -275,11 +425,9 @@ export function ScanScreen({
             <View style={s.liveCoachCard}>
               <View style={s.liveCoachHead}>
                 <Ionicons name="sparkles-outline" size={14} color="#FF7A59" />
-                <Text style={s.liveCoachTitle}>Label Coach Live</Text>
+                <Text style={s.liveCoachTitle}>Foto tip</Text>
               </View>
-              <Text style={s.liveCoachText}>
-                Tip: richt op de ingrediëntenlijst, vermijd reflectie en hou de camera 20-30 cm van het label.
-              </Text>
+              <Text style={s.liveCoachText}>Richt op ingrediënten, zonder reflectie.</Text>
             </View>
 
             {processingOCR ? (
@@ -300,8 +448,8 @@ export function ScanScreen({
                 </View>
                 <Text style={s.ocrHintText}>
                   {ocrPct >= 75
-                    ? "Ziet er goed uit. Je kunt analyseren."
-                    : "Kwaliteit is wat lager. Controleer even op OCR-foutjes."}
+                    ? "Ziet er goed uit."
+                    : "Check even op OCR-foutjes."}
                 </Text>
               </View>
             )}
@@ -347,55 +495,267 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#FFE8C7",
-    borderRadius: 16,
+    backgroundColor: "#EAF3FF",
+    borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(220,166,96,0.55)",
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    overflow: "hidden"
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 16,
+    gap: 14,
+    overflow: "hidden",
+    shadowColor: "#3B82F6",
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2
   },
   heroOrbOne: {
     position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    right: -25,
-    top: -40
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "rgba(255,255,255,0.55)",
+    right: -30,
+    top: -45
   },
   heroOrbTwo: {
     position: "absolute",
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(255,122,89,0.18)",
-    right: 46,
-    bottom: -26
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    right: 24,
+    bottom: -34
+  },
+  heroBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.14)"
+  },
+  heroBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#1D4ED8",
+    textTransform: "uppercase",
+    letterSpacing: 0.6
+  },
+  heroMainRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
   },
   heroIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.92)",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.14)"
   },
   heroTextWrap: {
     flex: 1,
-    gap: 2
+    gap: 4
   },
   heroTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#493329",
-    letterSpacing: -0.2
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1E3A5F",
+    letterSpacing: -0.3
+  },
+  heroHeadline: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: "800",
+    color: C.text,
+    letterSpacing: -0.5
   },
   heroBody: {
+    fontSize: 13,
+    color: "#5E718A",
+    lineHeight: 19
+  },
+  heroVisual: {
+    alignItems: "center",
+    gap: 8
+  },
+  heroMiniCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(34,197,94,0.16)"
+  },
+  heroMiniCardText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: C.textMuted
+  },
+  heroStatsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  heroStatChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.82)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
+  },
+  heroStatChipText: {
     fontSize: 12,
-    color: "#7E6457"
+    fontWeight: "600",
+    color: C.textMuted
+  },
+  contextToggle: {
+    flexDirection: "row",
+    gap: 8
+  },
+  contextPill: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 12,
+    paddingVertical: 10,
+    backgroundColor: "rgba(255,255,255,0.58)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border
+  },
+  contextPillActive: {
+    backgroundColor: C.surface,
+    borderColor: "rgba(34,197,94,0.22)"
+  },
+  contextPillLabel: {
+    fontSize: 13,
+    color: C.textMuted,
+    fontWeight: "600"
+  },
+  contextPillLabelActive: {
+    color: C.emerald
+  },
+  supermarketCard: {
+    backgroundColor: "#EEF8FF",
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 14,
+    gap: 12
+  },
+  supermarketHead: {
+    gap: 8
+  },
+  supermarketBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.86)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
+  },
+  supermarketBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: C.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.6
+  },
+  supermarketTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: C.text,
+    letterSpacing: -0.3
+  },
+  supermarketBody: {
+    fontSize: 13,
+    color: C.textMuted,
+    lineHeight: 19
+  },
+  supermarketActions: {
+    flexDirection: "row",
+    gap: 10
+  },
+  supermarketPrimaryAction: {
+    flex: 1.15,
+    minHeight: 52,
+    borderRadius: 14,
+    backgroundColor: "#1D4ED8",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: "#1D4ED8",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3
+  },
+  supermarketPrimaryActionText: {
+    fontSize: 14,
+    color: "#fff",
+    fontWeight: "700"
+  },
+  supermarketSecondaryAction: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.16)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8
+  },
+  supermarketSecondaryActionDisabled: {
+    opacity: 0.55
+  },
+  supermarketSecondaryActionText: {
+    fontSize: 14,
+    color: C.text,
+    fontWeight: "700"
+  },
+  supermarketTipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  supermarketTipChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
+  },
+  supermarketTipChipText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: "600"
   },
   // Heading
   heading: {
@@ -508,6 +868,38 @@ const s = StyleSheet.create({
     color: C.text,
     letterSpacing: 1
   },
+  supermarketScanStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: "#F4F8FF",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.16)"
+  },
+  supermarketScanStripIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "rgba(34,197,94,0.12)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  supermarketScanStripTextWrap: {
+    flex: 1,
+    gap: 2
+  },
+  supermarketScanStripTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: C.text
+  },
+  supermarketScanStripBody: {
+    fontSize: 12,
+    color: C.textMuted,
+    lineHeight: 17
+  },
   searchBtn: {
     width: 46,
     height: 46,
@@ -598,7 +990,7 @@ const s = StyleSheet.create({
   },
   productCardLeft: {
     flex: 1,
-    gap: 3
+    gap: 6
   },
   productCardName: {
     fontSize: 15,
@@ -618,6 +1010,46 @@ const s = StyleSheet.create({
     backgroundColor: C.emeraldSoft,
     alignItems: "center",
     justifyContent: "center"
+  },
+  nutritionRow: {
+    gap: 6,
+    paddingRight: 8
+  },
+  nutritionPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: "rgba(34,197,94,0.10)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(34,197,94,0.16)"
+  },
+  nutritionPillLabel: {
+    fontSize: 10,
+    color: C.textSubtle,
+    fontWeight: "700",
+    textTransform: "uppercase"
+  },
+  nutritionPillValue: {
+    fontSize: 12,
+    color: C.text,
+    fontWeight: "700"
+  },
+  nextProductBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 13,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#EAF3FF",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.16)"
+  },
+  nextProductBtnText: {
+    fontSize: 13,
+    color: C.text,
+    fontWeight: "700"
   },
   // Divider
   divider: {

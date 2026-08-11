@@ -72,11 +72,11 @@ export function ProfileScreen({
 
       <View style={s.heroCard}>
         <View style={s.heroLogo}>
-          <Ionicons name="leaf" size={18} color={C.emerald} />
+          <Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" />
         </View>
         <View style={s.heroBody}>
-          <Text style={s.heroTitle}>Jouw Food Shield 🛡️</Text>
-          <Text style={s.heroSub}>Personaliseer wat je wel en niet wilt eten.</Text>
+          <Text style={s.heroTitle}>Jouw veiligheidsprofiel</Text>
+          <Text style={s.heroSub}>Kies allergenen en ingrediënten die EatScanner extra streng moet bewaken.</Text>
         </View>
       </View>
 
@@ -126,10 +126,11 @@ export function ProfileScreen({
         </View>
 
         <View style={s.inputRow}>
+          <Ionicons name="search-outline" size={16} color={C.textSubtle} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Zoek ingredient..."
+            placeholder="Zoek ingrediënt..."
             placeholderTextColor={C.textSubtle}
             style={s.input}
           />
@@ -162,20 +163,22 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#DDF7FF",
-    borderRadius: 16,
+    backgroundColor: "#EEF6FF",
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(106,164,196,0.35)",
-    padding: 12,
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 10
   },
   heroLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)",
     alignItems: "center",
     justifyContent: "center"
   },
@@ -184,14 +187,15 @@ const s = StyleSheet.create({
     gap: 2
   },
   heroTitle: {
-    fontSize: 14,
-    color: "#254252",
-    fontWeight: "700",
+    fontSize: 15,
+    color: "#1D4ED8",
+    fontWeight: "800",
     letterSpacing: -0.2
   },
   heroSub: {
     fontSize: 12,
-    color: "#497084"
+    color: "#5E718A",
+    lineHeight: 18
   },
   // Heading
   heading: {

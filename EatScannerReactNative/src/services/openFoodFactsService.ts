@@ -1,5 +1,5 @@
 import { appConfig } from "../config/appConfig";
-import { Product } from "../types/domain";
+import { NutritionSummary, Product } from "../types/domain";
 
 type OFFResponse = {
   status: number;
@@ -11,8 +11,26 @@ type OFFResponse = {
     allergens_tags?: string[];
     allergens_hierarchy?: string[];
     allergens?: string;
+    nutriments?: {
+      "energy-kcal_100g"?: number | string;
+      "energy-kcal"?: number | string;
+      fat_100g?: number | string;
+      sugars_100g?: number | string;
+      proteins_100g?: number | string;
+      salt_100g?: number | string;
+    };
   };
 };
+
+function toNumber(value: number | string | undefined): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  return undefined;
+}
 
 function normalizeAllergenTag(value: string): string {
   return value
@@ -33,6 +51,25 @@ function extractAllergens(product: OFFResponse["product"]): string[] {
     .filter(Boolean);
 
   return Array.from(new Set([...fromTags, ...fromHierarchy, ...fromText])).filter(Boolean);
+}
+
+function extractNutrition(product: OFFResponse["product"]): NutritionSummary | undefined {
+  const nutriments = product?.nutriments;
+  if (!nutriments) return undefined;
+
+  const nutrition: NutritionSummary = {
+    caloriesPer100g: toNumber(nutriments["energy-kcal_100g"]) ?? toNumber(nutriments["energy-kcal"]),
+    fatPer100g: toNumber(nutriments.fat_100g),
+    sugarsPer100g: toNumber(nutriments.sugars_100g),
+    proteinsPer100g: toNumber(nutriments.proteins_100g),
+    saltPer100g: toNumber(nutriments.salt_100g)
+  };
+
+  if (Object.values(nutrition).every((value) => value == null)) {
+    return undefined;
+  }
+
+  return nutrition;
 }
 
 async function fetchFromUrl(url: string): Promise<OFFResponse | null> {
@@ -68,6 +105,7 @@ export async function fetchProductByBarcode(barcode: string): Promise<Product | 
     name: data.product.product_name?.trim() || "Onbekend product",
     ingredientsText: data.product.ingredients_text,
     allergens: extractAllergens(data.product),
-    imageUrl: data.product.image_front_url?.trim() || data.product.image_url?.trim()
+    imageUrl: data.product.image_front_url?.trim() || data.product.image_url?.trim(),
+    nutrition: extractNutrition(data.product)
   };
 }

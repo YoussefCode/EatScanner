@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, Easing, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafetyResult, UserExperienceFeedback } from "../types/domain";
+import { NutritionSummary, SafetyResult, UserExperienceFeedback } from "../types/domain";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -23,6 +23,12 @@ const C = {
 
 type HighlightChunk = { text: string; highlighted: boolean };
 
+function formatMetric(value: number | undefined, unit: string): string | null {
+  if (value == null || Number.isNaN(value)) return null;
+  if (unit === "kcal") return `${Math.round(value)} ${unit}`;
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${unit}`;
+}
+
 type Props = {
   evaluatingSafety: boolean;
   onEvaluate: () => void;
@@ -31,6 +37,7 @@ type Props = {
   highlightedChunks: HighlightChunk[];
   productName: string;
   productImageUrl: string;
+  productNutrition: NutritionSummary | null;
   analysisToast: { type: "success" | "error"; message: string } | null;
   replacementTips: string[];
   onFeedback: (value: UserExperienceFeedback) => void;
@@ -45,6 +52,7 @@ export function CheckScreen({
   highlightedChunks,
   productName,
   productImageUrl,
+  productNutrition,
   analysisToast,
   replacementTips,
   onFeedback,
@@ -62,6 +70,13 @@ export function CheckScreen({
   }, [enterAnim]);
 
   const isSafe = result?.isSafe;
+  const nutritionItems = [
+    { label: "kcal", value: formatMetric(productNutrition?.caloriesPer100g, "kcal") },
+    { label: "vet", value: formatMetric(productNutrition?.fatPer100g, "g") },
+    { label: "suiker", value: formatMetric(productNutrition?.sugarsPer100g, "g") },
+    { label: "eiwit", value: formatMetric(productNutrition?.proteinsPer100g, "g") },
+    { label: "zout", value: formatMetric(productNutrition?.saltPer100g, "g") }
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
 
   return (
     <Animated.View
@@ -76,14 +91,31 @@ export function CheckScreen({
 
       <View style={s.heroCard}>
         <View style={s.heroSpark} />
-        <Ionicons name="happy-outline" size={18} color="#FF7A59" />
-        <Text style={s.heroText}>Snack Check vibe · duidelijk en luchtig ✨</Text>
+        <View style={s.heroHeaderRow}>
+          <View style={s.heroIconBadge}>
+            <Ionicons name="shield-checkmark-outline" size={18} color="#1D4ED8" />
+          </View>
+          <View style={s.heroHeaderTextWrap}>
+            <Text style={s.heroTitle}>Analyse center</Text>
+            <Text style={s.heroText}>Snel verdict.</Text>
+          </View>
+        </View>
+        <View style={s.heroChipsRow}>
+          <View style={s.heroChip}>
+            <Ionicons name="flash-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroChipText}>Live</Text>
+          </View>
+          <View style={s.heroChip}>
+            <Ionicons name="analytics-outline" size={12} color={C.textMuted} />
+            <Text style={s.heroChipText}>Score</Text>
+          </View>
+        </View>
       </View>
 
       {/* ── Page heading ─────────────────────────────────────────── */}
       <View style={s.heading}>
         <Text style={s.headingTitle}>Controle</Text>
-        <Text style={s.headingBody}>Allergenen analyse</Text>
+        <Text style={s.headingBody}>Allergenencheck</Text>
       </View>
 
       {analysisToast && (
@@ -101,10 +133,24 @@ export function CheckScreen({
       {!result ? (
         <View style={s.preCard}>
           <View style={s.preIconRing}>
-            <Ionicons name="shield-outline" size={32} color={C.textSubtle} />
+            <Ionicons name="shield-outline" size={32} color="#1D4ED8" />
           </View>
-          <Text style={s.preTitle}>Nog niet gecontroleerd</Text>
-          <Text style={s.preBody}>Druk hieronder op "Analyseer" om de ingrediënten te scannen op jouw geblokkeerde stoffen.</Text>
+          <Text style={s.preTitle}>Klaar voor analyse</Text>
+          <Text style={s.preBody}>Scan eerst een product of ingrediënten.</Text>
+          <View style={s.preStepsRow}>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>1</Text>
+              <Text style={s.preStepText}>Scan</Text>
+            </View>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>2</Text>
+              <Text style={s.preStepText}>Check</Text>
+            </View>
+            <View style={s.preStepChip}>
+              <Text style={s.preStepIndex}>3</Text>
+              <Text style={s.preStepText}>Klaar</Text>
+            </View>
+          </View>
         </View>
       ) : (
         <>
@@ -124,6 +170,20 @@ export function CheckScreen({
                 <Text style={s.productPreviewName} numberOfLines={2}>
                   {productName || "Onbekend product"}
                 </Text>
+              </View>
+            </View>
+          )}
+
+          {nutritionItems.length > 0 && (
+            <View style={s.surface}>
+              <Text style={s.sectionLabel}>Voeding per 100g</Text>
+              <View style={s.nutritionGrid}>
+                {nutritionItems.map((item) => (
+                  <View key={item.label} style={s.nutritionTile}>
+                    <Text style={s.nutritionTileLabel}>{item.label}</Text>
+                    <Text style={s.nutritionTileValue}>{item.value}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           )}
@@ -229,7 +289,7 @@ export function CheckScreen({
 
           <TouchableOpacity style={s.shareBtn} onPress={onShareSafetyCard} activeOpacity={0.85}>
             <Ionicons name="share-social-outline" size={16} color="#7E6D6C" />
-            <Text style={s.shareBtnText}>Deel Safety Card</Text>
+            <Text style={s.shareBtnText}>Deel</Text>
           </TouchableOpacity>
         </>
       )}
@@ -260,30 +320,73 @@ const s = StyleSheet.create({
     gap: 10
   },
   heroCard: {
-    backgroundColor: "#FFE8C7",
-    borderRadius: 14,
+    backgroundColor: "#EEF6FF",
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(220,166,96,0.55)",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    borderColor: "rgba(59,130,246,0.18)",
+    padding: 14,
+    gap: 12,
     overflow: "hidden"
   },
   heroSpark: {
     position: "absolute",
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: "rgba(255,255,255,0.28)",
-    right: -18,
-    top: -30
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(255,255,255,0.55)",
+    right: -20,
+    top: -26
+  },
+  heroHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  heroIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.14)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  heroHeaderTextWrap: {
+    flex: 1,
+    gap: 2
+  },
+  heroTitle: {
+    fontSize: 14,
+    color: "#1D4ED8",
+    fontWeight: "800",
+    letterSpacing: -0.2
   },
   heroText: {
     fontSize: 12,
-    color: "#5A433B",
+    color: "#5E718A",
     fontWeight: "600"
+  },
+  heroChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  heroChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.88)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(59,130,246,0.12)"
+  },
+  heroChipText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: C.textMuted
   },
   // Heading
   heading: {
@@ -328,12 +431,12 @@ const s = StyleSheet.create({
   // Pre-check
   preCard: {
     backgroundColor: C.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.border,
-    padding: 28,
+    padding: 24,
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -341,27 +444,62 @@ const s = StyleSheet.create({
     elevation: 1
   },
   preIconRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: C.surfaceRaised,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#EEF6FF",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.border,
+    borderColor: "rgba(59,130,246,0.16)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4
+    marginBottom: 2
   },
   preTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "700",
     color: C.text,
     letterSpacing: -0.3
   },
   preBody: {
-    fontSize: 14,
+    fontSize: 13,
     color: C.textMuted,
     textAlign: "center",
-    lineHeight: 20
+    lineHeight: 19
+  },
+  preStepsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 2
+  },
+  preStepChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: C.surfaceRaised,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border
+  },
+  preStepIndex: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    textAlign: "center",
+    lineHeight: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(59,130,246,0.12)",
+    color: "#1D4ED8",
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  preStepText: {
+    fontSize: 12,
+    color: C.textMuted,
+    fontWeight: "600"
   },
   // Status banner
   productPreviewCard: {
@@ -413,6 +551,32 @@ const s = StyleSheet.create({
     color: C.text,
     fontWeight: "700",
     letterSpacing: -0.2
+  },
+  nutritionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  nutritionTile: {
+    minWidth: 86,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: C.surfaceRaised,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    gap: 3
+  },
+  nutritionTileLabel: {
+    fontSize: 10,
+    color: C.textSubtle,
+    fontWeight: "700",
+    textTransform: "uppercase"
+  },
+  nutritionTileValue: {
+    fontSize: 14,
+    color: C.text,
+    fontWeight: "700"
   },
 
   statusBanner: {
